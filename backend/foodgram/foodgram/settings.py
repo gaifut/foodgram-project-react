@@ -3,6 +3,8 @@ from pathlib import Path
 
 import os
 
+# from business_logic.pagination import CustomPagination
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'rest_framework.authtoken',
     'djoser',
     'api.apps.ApiConfig',
@@ -129,6 +132,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'business_logic.pagination.CustomPagination',
 }
 
 AUTH_USER_MODEL = 'users.User'

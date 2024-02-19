@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import RegexValidator
 
+
 from users.models import User
 
 
@@ -40,6 +41,7 @@ class Recipe(models.Model):
         upload_to='business_logic/images/',
         default=None,
     )
+    published_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
         return self.name
@@ -54,17 +56,27 @@ class IngredientRecipe(models.Model):
         return f'{self.ingredient} {self.recipe}'
     
 
-class Follow(models.Model):
-    following = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='following')
+class Subscription(models.Model):
+    subscribed_to = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='subscribed_to')
+    subscribe = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='subscribe')
     
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'following'],
-                name='unique_following'
+                fields=['subscribe', 'subscribed_to'],
+                name='unique_subscribed_to'
             )
         ]
     
     def __str__(self):
-        f'{self.user.username} follows {self.following.username}'
+        f'{self.subscribe.username} subscribed_to {self.subscribed_to.username}'
+
+
+class Favourite(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='favourites_recipe')
+
+
+    def __str__(self):
+        return self.recipe

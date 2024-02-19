@@ -4,7 +4,7 @@ from rest_framework import serializers
 from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer
 
-from business_logic.models import Follow, Tag, Ingredient, IngredientRecipe, Recipe
+from business_logic.models import Tag, Ingredient, IngredientRecipe, Recipe, Subscription  #Favourite
 from users.models import User
 
 
@@ -135,5 +135,34 @@ class RecipeSerializer(serializers.ModelSerializer):
         return instance
 
 
-class FollowSerializer(serializers.ModelSerializer):
+class SubscriptionSerializer(serializers.ModelSerializer):
+    # subscribed_to = serializers.SlugRelatedField(
+    #     slug_field='username',
+    #     queryset=User.objects.all()
+    # )
+    # user = serializers.SlugRelatedField(
+    #     slug_field='username',
+    #     read_only=True,
+    #     default=serializers.CurrentUserDefault()
+    # )
+
+
+    class Meta:
+        model = Subscription
+        fields = ('id', 'subscribed_to')
+
+    def create(self, validated_data):
+        subscribed_to = self.context['request'].user
+        subscription = Subscription.objects.create(subscribed_to=subscribed_to, **validated_data)
+        return subscription
     
+
+# class FavouriteSerializer(serializers.ModelSerializer):
+#     # id = serializers.IntegerField(source='recipe.id')
+#     # name = serializers.CharField(source='recipe.name')
+#     # image = serializers.SerializerMethodField()
+#     # cooking_time = serializers.IntegerField(source='recipe.cooking_time')
+
+#     class Meta:
+#         model = Favourite
+#         fields = ('id', 'name', 'image', 'cooking_time')
