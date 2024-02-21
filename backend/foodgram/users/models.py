@@ -11,6 +11,9 @@ class User(AbstractUser):
         (USER, 'Авторизированный пользователь'),
         (ADMIN, 'Администратор'),
     ]
+    USERNAME_FIELD = 'email'
+
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
     username = models.CharField(
         verbose_name='Имя пользователя',
         max_length=150,
@@ -30,6 +33,7 @@ class User(AbstractUser):
         choices=USER_ROLES,
         default=USER
     )
+    is_subscribed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['username']

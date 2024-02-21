@@ -42,6 +42,7 @@ class Recipe(models.Model):
         default=None,
     )
     published_at = models.DateTimeField(auto_now_add=True)
+    is_favorited = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.name
@@ -59,24 +60,16 @@ class IngredientRecipe(models.Model):
 class Subscription(models.Model):
     subscribed_to = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='subscribed_to')
-    subscribe = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='subscribe')
+    subscriber = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='subscriber')
     
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['subscribe', 'subscribed_to'],
+                fields=['subscriber', 'subscribed_to'],
                 name='unique_subscribed_to'
             )
         ]
     
     def __str__(self):
-        f'{self.subscribe.username} subscribed_to {self.subscribed_to.username}'
-
-
-class Favourite(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='favourites_recipe')
-
-
-    def __str__(self):
-        return self.recipe
+        f'{self.subscriber.username} subscribed_to {self.subscribed_to.username}'

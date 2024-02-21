@@ -4,7 +4,7 @@ from rest_framework import serializers
 from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer
 
-from business_logic.models import Tag, Ingredient, IngredientRecipe, Recipe, Subscription  #Favourite
+from business_logic.models import Tag, Ingredient, IngredientRecipe, Recipe, Subscription
 from users.models import User
 
 
@@ -20,15 +20,17 @@ class Base64ImageField(serializers.ImageField):
 
 class CustomUserSerializer(UserSerializer):
 
+
     class Meta:
         model = User
-        fields = [
+        fields = (
             'id',
             'email',
             'username',
             'first_name',
-            'last_name'
-        ]
+            'last_name',
+            'is_subscribed'
+        )
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -81,12 +83,13 @@ class RecipeSerializer(serializers.ModelSerializer):
     author = CustomUserSerializer(many=False, read_only=True)
     ingredients = IngredientRecipeSerializer(many=True, source='ingredients_recipe') #read_only=True, 
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
+    # is_favourited = FavouriteSerializer(many=True, source='favourites_recipe')
 
     class Meta:
         model = Recipe
         fields = (
             'id', 'tags', 'author', 'ingredients', 'name', 'text',
-            'cooking_time', 'image',
+            'cooking_time', 'image', 'is_favorited'
         )
 
 
@@ -136,33 +139,33 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    # subscribed_to = serializers.SlugRelatedField(
-    #     slug_field='username',
-    #     queryset=User.objects.all()
-    # )
-    # user = serializers.SlugRelatedField(
-    #     slug_field='username',
-    #     read_only=True,
-    #     default=serializers.CurrentUserDefault()
-    # )
-
 
     class Meta:
         model = Subscription
-        fields = ('id', 'subscribed_to')
+        fields = ('id', 'subscribed_to', 'subscriber')
 
-    def create(self, validated_data):
-        subscribed_to = self.context['request'].user
-        subscription = Subscription.objects.create(subscribed_to=subscribed_to, **validated_data)
-        return subscription
-    
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        subscribed_to = instance.subscribed_to
+        data['id'] = subscribed_to.id
+        data['email'] = subscribed_to.email
+        data['username'] = subscribed_to.username
+        data['first_name'] = subscribed_to.first_name
+        data['last_name'] = subscribed_to.last_name
+        data['is_subscribed'] = subscribed_to.is_subscribed
+        data['recipes_count'] = instance.subscribed_to.recipes.count()
 
-# class FavouriteSerializer(serializers.ModelSerializer):
-#     # id = serializers.IntegerField(source='recipe.id')
-#     # name = serializers.CharField(source='recipe.name')
-#     # image = serializers.SerializerMethodField()
-#     # cooking_time = serializers.IntegerField(source='recipe.cooking_time')
+        recipes_data = []
+        for recipe in subscribed_to.recipes.all():
+            recipe_data = {
+                'id': recipe.id,
+                'name': recipe.name,
+                'image': recipe.image.url,
+                'cooking_time': recipe.cooking_time,
+            }
+            recipes_data.append(recipe_data)
+        data['recipes'] = recipes_data
 
-#     class Meta:
-#         model = Favourite
-#         fields = ('id', 'name', 'image', 'cooking_time')
+        return data
+
+
