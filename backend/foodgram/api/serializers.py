@@ -89,7 +89,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = (
             'id', 'tags', 'author', 'ingredients', 'name', 'text',
-            'cooking_time', 'image', 'is_favorited'
+            'cooking_time', 'image', 'is_favorited', 'is_in_shopping_cart'
         )
 
 
@@ -169,3 +169,15 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         return data
 
 
+class ShoppingCartSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+class ShoppingCartListSerializer(serializers.ModelSerializer):
+    ingredients = IngredientRecipeSerializer(many=True, source='ingredients_recipe')
+
+    class Meta:
+        model = IngredientRecipe
+        fields = ('ingredients',)
