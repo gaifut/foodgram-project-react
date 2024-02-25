@@ -1,7 +1,6 @@
 from django.db import models
 from django.core.validators import RegexValidator
 
-
 from users.models import User
 
 
@@ -15,14 +14,20 @@ class Tag(models.Model):
         validators=([RegexValidator(regex=r'^[-a-zA-Z0-9_]+$')])
     )
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class Ingredient(models.Model):
     name = models.CharField(
-        max_length=200, verbose_name='Название ингредиента'
+        max_length=200, verbose_name='Название ингредиента', unique=True
     )
     measurement_unit = models.CharField(
         max_length=200, verbose_name='Единица измерения'
     )
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Recipe(models.Model):
@@ -50,20 +55,24 @@ class Recipe(models.Model):
 
 
 class IngredientRecipe(models.Model):
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, related_name='ingredients_recipe')
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='ingredients_recipe')
+    ingredient = models.ForeignKey(
+        Ingredient, on_delete=models.CASCADE, related_name='ingredients_recipe'
+    )
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE, related_name='ingredients_recipe'
+    )
     amount = models.IntegerField()
 
     def __str__(self) -> str:
         return f'{self.ingredient} {self.recipe}'
-    
+
 
 class Subscription(models.Model):
     subscribed_to = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='subscribed_to')
     subscriber = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='subscriber')
-    
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -71,6 +80,9 @@ class Subscription(models.Model):
                 name='unique_subscribed_to'
             )
         ]
-    
+
     def __str__(self):
-        f'{self.subscriber.username} subscribed_to {self.subscribed_to.username}'
+        return (
+            f'{self.subscriber.username}'
+            f' subscribed_to {self.subscribed_to.username}'
+        )
