@@ -1,22 +1,37 @@
 from rest_framework import (
     filters, generics, viewsets, status, permissions, mixins
 )
+from django.core.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
 from business_logic.models import Ingredient, Recipe, Tag, Subscription
+from business_logic.pagination import CustomPagination
 from users.models import User
-from .permissions import IsAuthorAdminSuperuserOrReadOnlyPermission
+from .permissions import IsAuthorAdminSuperuserOrReadOnlyPermission, IsAdminPermissionOrReadOnly
 from .serializers import (
-    CustomUserSerializer, IngredientSerializer, RecipeSerializer,
+    CustomUserSerializer, IngredientListSerializer, IngredientSerializer, RecipeSerializer, RecipeGetSerializer,
     ShoppingCartSerializer, ShoppingCartListSerializer, SubscriptionSerializer,
     TagSerializer
 )
+from django_filters import rest_framework as f
+
+
+class RecipeFilter(f.FilterSet):
+    author = f.CharFilter(field_name='author__username')
+    tags = f.CharFilter(field_name='tags__slug') 
+    is_favorited = f.BooleanFilter(field_name='is_favorited')
+
+    class Meta:
+        model = Recipe
+        fields = ['author', 'tags', 'is_favorited']
 
 
 class PlainTextRenderer(BaseRenderer):
@@ -69,43 +84,56 @@ class PlainTextRenderer(BaseRenderer):
 class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
-    permission_classes = (IsAuthorAdminSuperuserOrReadOnlyPermission,)
 
     def get_permissions(self):
-        if self.action == 'list':
-            return [permissions.AllowAny()]
+        if self.action == 'me':
+            return [IsAuthenticated()]
         return super().get_permissions()
 
-    def list(self, request, *args, **kwargs):
-        queryset = User.objects.all()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
 
-
-class IngredientViewSet(viewsets.ModelViewSet):
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
-    serializer_class = IngredientSerializer
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('name',)
-    permission_classes = (IsAuthorAdminSuperuserOrReadOnlyPermission,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('name',)
+    permission_classes = (AllowAny,)
+    pagination_class = None
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return IngredientListSerializer
+        return IngredientSerializer
+
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all().order_by('-published_at')
-    serializer_class = RecipeSerializer
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('author', 'tags', 'is_favorited', 'name')
-    permission_classes = (IsAuthorAdminSuperuserOrReadOnlyPermission,)
+    filterset_class = RecipeFilter
+    #filterset_fields = ('author', 'tags', 'is_favorited', 'name')
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = CustomPagination
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return RecipeGetSerializer
+        return RecipeSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
 
-class TagViewSet(viewsets.ModelViewSet):
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (IsAuthorAdminSuperuserOrReadOnlyPermission,)
+    permission_classes = (AllowAny, )
 
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 class FavoriteViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthorAdminSuperuserOrReadOnlyPermission,)
