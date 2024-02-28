@@ -217,14 +217,47 @@ class RecipeSerializer(serializers.ModelSerializer):
         return instance
 
 
+# class SubscriptionListSerializer(serializers.ModelSerializer):
+
+#     class Meta:
+#         model = Subscription
+#         fields = ('id', )
+
+#     def to_representation(self, instance):
+#         data = super().to_representation(instance)
+#         subscribed_to = instance.subscribed_to
+#         data['id'] = subscribed_to.id
+#         data['email'] = subscribed_to.email
+#         data['username'] = subscribed_to.username
+#         data['first_name'] = subscribed_to.first_name
+#         data['last_name'] = subscribed_to.last_name
+#         data['is_subscribed'] = subscribed_to.is_subscribed
+#         data['recipes_count'] = instance.subscribed_to.recipes.count()
+
+#         recipes_data = []
+#         for recipe in subscribed_to.recipes.all():
+#             recipe_data = {
+#                 'id': recipe.id,
+#                 'name': recipe.name,
+#                 'image': recipe.image.url,
+#                 'cooking_time': recipe.cooking_time,
+#             }
+#             recipes_data.append(recipe_data)
+#         data['recipes'] = recipes_data
+#         print('data: ', data)
+#         return data
+
+
 class SubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subscription
-        fields = ('id', )  # 'subscribed_to', 'subscriber'
+        fields = ('id', 'subscribed_to', 'subscriber')
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        data.pop('subscribed_to')
+        data.pop('subscriber')
         subscribed_to = instance.subscribed_to
         data['id'] = subscribed_to.id
         data['email'] = subscribed_to.email
@@ -244,8 +277,20 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             }
             recipes_data.append(recipe_data)
         data['recipes'] = recipes_data
-
+        print('data: ', data)
         return data
+    
+    def validate(self, data):
+            subscriber = data.get('subscriber')
+            subscribed_to = data.get('subscribed_to')
+
+            if subscriber == subscribed_to:
+                raise serializers.ValidationError('Нельзя подписаться на самого себя')
+
+            if Subscription.objects.filter(subscriber=subscriber, subscribed_to=subscribed_to).exists():
+                raise serializers.ValidationError('Вы уже подписаны на данного пользователя.')
+
+            return data
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
@@ -263,3 +308,15 @@ class ShoppingCartListSerializer(serializers.ModelSerializer):
     class Meta:
         model = IngredientRecipe
         fields = ('ingredients',)
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+    cooking_time = serializers.IntegerField(
+        min_value=1,
+    )
+
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
