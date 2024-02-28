@@ -1,3 +1,4 @@
+import pprint
 from rest_framework import (
     filters, generics, viewsets, status, permissions, mixins
 )
@@ -5,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
@@ -26,7 +27,7 @@ from django_filters import rest_framework as f
 
 class RecipeFilter(f.FilterSet):
     author = f.CharFilter()
-    tags = f.AllValuesMultipleFilter()
+    tags = f.AllValuesMultipleFilter(field_name='tags__slug', lookup_expr='contains')
     is_favorited = f.BooleanFilter()
     is_in_shopping_cart = f.BooleanFilter()
 
@@ -111,7 +112,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all().order_by('-published_at')
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-    #filterset_fields = ('author', 'tags', 'is_favorited', 'name')
     permission_classes = (IsAuthenticatedOrReadOnly,)
     pagination_class = CustomPagination
 
@@ -122,6 +122,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user != instance.author:
+            raise PermissionDenied('Удалять рецепт может только автор рецепта.')
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -165,7 +172,6 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             recipe = Recipe.objects.get(id=recipe_id)
             recipe.is_favorited = False
             recipe.save()
-            # serializer = RecipeSerializer(recipe)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Recipe.DoesNotExist:
             return Response(
@@ -198,8 +204,14 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
 
     def delete(self, request, *args, **kwargs):
         recipe_id = kwargs.get('recipe_pk')
+
         try:
             recipe = Recipe.objects.get(id=recipe_id)
+            # if not recipe.is_in_shopping_cart:
+            #     return Response(
+            #         {'error': 'Нельзя удалить рецепт, которого нет в корзине.'},
+            #         status=status.HTTP_400_BAD_REQUEST
+            #     )
             recipe.is_in_shopping_cart = False
             recipe.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -208,6 +220,8 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
                 {'ошибка': 'рецепт не найден'},
                 status=status.HTTP_404_NOT_FOUND
             )
+        
+    
 
 
 class ShoppingCartListView(APIView):
