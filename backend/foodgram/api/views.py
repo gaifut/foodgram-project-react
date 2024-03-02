@@ -183,11 +183,10 @@ class FavoriteViewSet(viewsets.ModelViewSet):
                 recipe.favorited_by.remove(request.user)
                 recipe.save()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
-                    {'error': 'Нельзя убрать из избранного рецепт,'
-                     'которого там нет.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            return Response({
+                'error': 'Нельзя убрать из избранного рецепт,'
+                ' которого там нет.'}, status=status.HTTP_400_BAD_REQUEST
+            )
         except Recipe.DoesNotExist:
             return Response(
                 {'ошибка': 'рецепт не найден'},
@@ -224,17 +223,16 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
         try:
             recipe = Recipe.objects.get(id=recipe_id)
             if (recipe.is_in_shopping_cart and
-                    recipe.added_to_shopping_cart_by.
-                    filter(id=request.user.id).exists()):
+                    recipe.added_to_shopping_cart_by.filter(
+                        id=request.user.id).exists()):
                 recipe.is_in_shopping_cart = False
                 recipe.added_to_shopping_cart_by.remove(request.user)
                 recipe.save()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
-                    {'error':
-                     'Нельзя удалить рецепт, которого нет в корзине.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            return Response({
+                'error': 'Нельзя удалить рецепт,'
+                ' которого нет в корзине.'}, status=status.HTTP_400_BAD_REQUEST
+            )
         except Recipe.DoesNotExist:
             return Response(
                 {'ошибка': 'рецепт не найден'},
