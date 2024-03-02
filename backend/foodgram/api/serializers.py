@@ -169,32 +169,32 @@ class RecipeSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if self.context['request'].user != instance.author:
             raise PermissionDenied
-        try:
-            ingredients_data = validated_data.pop('ingredients_recipe')
-        except KeyError:
-            raise ValidationError('Ингридиент должен быть в запросе.')
-        if ingredients_data == []:
+
+        ingredients_data = validated_data.pop('ingredients_recipe', [])
+        if not ingredients_data:
             raise ValidationError('Список ингридиентов не может быть пустым.')
-        check_unique_id = []
+
+        tags_data = validated_data.pop('tags', [])
+        if not tags_data:
+            raise ValidationError('Список тегов не может быть пустым.')
+
+        check_unique_id = set()
         for ingredient_data in ingredients_data:
             ingredient_id = ingredient_data.get('id')
-            check_unique_id.append(ingredient_id)
-        if len(check_unique_id) != len(set(check_unique_id)):
-            raise ValidationError('Ингридиенты должны быть уникальными.')
-        try:
-            tags_data = validated_data.pop('tags')
-        except KeyError:
-            raise ValidationError('Тег должен быть в запросе.')
-        if tags_data == []:
-            raise ValidationError('Список тегов не может быть пустым.')
+            if ingredient_id in check_unique_id:
+                raise ValidationError('Ингридиенты должны быть уникальными.')
+            check_unique_id.add(ingredient_id)
+
         if len(tags_data) != len(set(tags_data)):
             raise ValidationError('Теги должны быть уникальными.')
+
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.cooking_time = validated_data.get(
             'cooking_time', instance.cooking_time
         )
         instance.image = validated_data.get('image', instance.image)
+
         lst_ingredients = []
         for ingredient_data in ingredients_data:
             ingredient_id = ingredient_data.get('id')
@@ -202,13 +202,15 @@ class RecipeSerializer(serializers.ModelSerializer):
                 ingredient = Ingredient.objects.get(id=ingredient_id)
             except ObjectDoesNotExist:
                 raise ValidationError('Ингридиент должен быть в Базе Данных')
+            amount = ingredient_data.get('amount', 0)
+            if amount < 1:
+                raise ValidationError('Кол-во ингридиентов должно быть > 1.')
             lst_ingredients.append(ingredient)
         instance.ingredients.set(lst_ingredients)
-        amount = ingredient_data.get('amount', 0)
-        if amount < 1:
-            raise ValidationError('Кол-во ингридиентов должно быть > 1.')
+
         instance.tags.set(tags_data)
         instance.save()
+
         return instance
 
 
