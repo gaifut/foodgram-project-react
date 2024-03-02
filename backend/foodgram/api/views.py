@@ -224,7 +224,7 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
             recipe = Recipe.objects.get(id=recipe_id)
             if (recipe.is_in_shopping_cart
                 and recipe.added_to_shopping_cart_by.filter(
-                        id=request.user.id).exists()):
+                    id=request.user.id).exists()):
                 recipe.is_in_shopping_cart = False
                 recipe.added_to_shopping_cart_by.remove(request.user)
                 recipe.save()
