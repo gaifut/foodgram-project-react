@@ -171,31 +171,30 @@ class RecipeSerializer(serializers.ModelSerializer):
             raise PermissionDenied
 
         ingredients_data = validated_data.pop('ingredients_recipe', [])
+        tags_data = validated_data.pop('tags', [])
+
         if not ingredients_data:
             raise ValidationError('Список ингридиентов не может быть пустым.')
 
-        tags_data = validated_data.pop('tags', [])
         if not tags_data:
             raise ValidationError('Список тегов не может быть пустым.')
 
-        check_unique_id = set()
+        unique_ingredient_ids = set()
         for ingredient_data in ingredients_data:
             ingredient_id = ingredient_data.get('id')
-            if ingredient_id in check_unique_id:
+            if ingredient_id in unique_ingredient_ids:
                 raise ValidationError('Ингридиенты должны быть уникальными.')
-            check_unique_id.add(ingredient_id)
+            unique_ingredient_ids.add(ingredient_id)
 
         if len(tags_data) != len(set(tags_data)):
             raise ValidationError('Теги должны быть уникальными.')
 
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time
-        )
+        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
         instance.image = validated_data.get('image', instance.image)
 
-        lst_ingredients = []
+        ingredients = []
         for ingredient_data in ingredients_data:
             ingredient_id = ingredient_data.get('id')
             try:
@@ -205,8 +204,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             amount = ingredient_data.get('amount', 0)
             if amount < 1:
                 raise ValidationError('Кол-во ингридиентов должно быть > 1.')
-            lst_ingredients.append(ingredient)
-        instance.ingredients.set(lst_ingredients)
+            ingredients.append(ingredient)
+        instance.ingredients.set(ingredients)
 
         instance.tags.set(tags_data)
         instance.save()
