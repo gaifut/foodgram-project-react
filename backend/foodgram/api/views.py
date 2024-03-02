@@ -1,39 +1,38 @@
-import pprint
 from rest_framework import (
-    filters, generics, viewsets, status, permissions, mixins
+    filters, viewsets, status, permissions,
 )
-from django.db.models import Count
 from django.core.exceptions import PermissionDenied
+from django.db.models import Count
+from django_filters import rest_framework as f
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
-from rest_framework.decorators import action
-from rest_framework.generics import GenericAPIView
-from rest_framework.exceptions import NotFound
-from rest_framework.generics import ListAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import (
+    AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+)
 from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
-from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
 
-from business_logic.models import Ingredient, Recipe, Tag, Subscription #UserRecipe
+from business_logic.models import Ingredient, Recipe, Subscription, Tag
 from business_logic.pagination import CustomPagination
 from users.models import User
 from .permissions import IsAuthorAdminSuperuserOrReadOnlyPermission
 from .serializers import (
-    CustomUserSerializer, IngredientListSerializer, IngredientSerializer, RecipeSerializer, RecipeGetSerializer,
+    CustomUserSerializer, FavoriteSerializer, IngredientListSerializer,
+    IngredientSerializer, RecipeGetSerializer, RecipeSerializer,
     ShoppingCartSerializer, ShoppingCartListSerializer,
-    TagSerializer, FavoriteSerializer, SubscirptionCreateSerializer, SubscirptionRespondSerializer  #, SubscriptionListSerializer, SubscriptionCreateSerializer
+    SubscirptionCreateSerializer, SubscirptionRespondSerializer, TagSerializer
 )
-from django_filters import rest_framework as f
-
 
 
 class RecipeFilter(f.FilterSet):
     author = f.CharFilter()
-    tags = f.AllValuesMultipleFilter(field_name='tags__slug', lookup_expr='contains')
+    tags = f.AllValuesMultipleFilter(
+        field_name='tags__slug', lookup_expr='contains'
+    )
     is_favorited = f.BooleanFilter()
     is_in_shopping_cart = f.BooleanFilter()
 
@@ -131,7 +130,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if request.user != instance.author:
-            raise PermissionDenied('Удалять рецепт может только автор рецепта.')
+            raise PermissionDenied(
+                'Удалять рецепт может только автор рецепта.'
+            )
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -141,11 +142,11 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     permission_classes = (AllowAny, )
 
-
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
 
 class FavoriteViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthorAdminSuperuserOrReadOnlyPermission,)
@@ -164,7 +165,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             recipe.save()
             serializer = FavoriteSerializer(
                 recipe,
-                ) 
+                )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Recipe.DoesNotExist:
             return Response(
@@ -176,13 +177,15 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         recipe_id = kwargs.get('recipe_pk')
         try:
             recipe = Recipe.objects.get(id=recipe_id)
-            if recipe.is_favorited and recipe.favorited_by.filter(id=request.user.id).exists():
+            if (recipe.is_favorited and
+                    recipe.favorited_by.filter(id=request.user.id).exists()):
                 recipe.is_favorited = False
                 recipe.favorited_by.remove(request.user)
                 recipe.save()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
-                    {'error': 'Нельзя убрать из избранного рецепт, которого там нет.'},
+                    {'error':
+                     'Нельзя убрать из избранного рецепт, которого там нет.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
         except Recipe.DoesNotExist:
@@ -220,13 +223,16 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
 
         try:
             recipe = Recipe.objects.get(id=recipe_id)
-            if recipe.is_in_shopping_cart and recipe.added_to_shopping_cart_by.filter(id=request.user.id).exists():
+            if (recipe.is_in_shopping_cart and
+                    recipe.added_to_shopping_cart_by.
+                    filter(id=request.user.id).exists()):
                 recipe.is_in_shopping_cart = False
                 recipe.added_to_shopping_cart_by.remove(request.user)
                 recipe.save()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
-                    {'error': 'Нельзя удалить рецепт, которого нет в корзине.'},
+                    {'error':
+                     'Нельзя удалить рецепт, которого нет в корзине.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
         except Recipe.DoesNotExist:
@@ -240,7 +246,6 @@ class ShoppingCartListView(APIView):
     renderer_classes = [PlainTextRenderer]
     permission_classes = (permissions.IsAuthenticated,)
     filterset_class = RecipeFilter
-
 
     def get(self, request, *args, **kwargs):
         recipes = Recipe.objects.filter(is_in_shopping_cart=True)
@@ -261,11 +266,11 @@ class SubscriptionListView(ListAPIView):
     def get_queryset(self):
         user = self.request.user
         queryset = Subscription.objects.filter(subscriber=user)
-        print(queryset)
-
         recipes_limit = self.request.query_params.get('recipes_limit')
         if recipes_limit:
-            queryset = queryset.annotate(recipes_count=Count('subscribed_to__recipes'))
+            queryset = queryset.annotate(recipes_count=Count(
+                'subscribed_to__recipes'
+            ))
             queryset = queryset.filter(recipes_count__lte=recipes_limit)
 
         return queryset
@@ -276,9 +281,6 @@ class SubscriptionView(ListAPIView):
     pagination_class = CustomPagination
 
     def post(self, request, user_id):
-        pprint.pprint(request.__dict__)
-        print('user_id: ', user_id)
-        print('self: ', self.__dict__)
         subscribed_to = get_object_or_404(User, pk=user_id)
         subscribed_to.is_subscribed = True
         subscribed_to.save()
@@ -296,9 +298,9 @@ class SubscriptionView(ListAPIView):
             instance=subscription,
             context={'request': request}
             )
-        print('serializer_respond_contents: ',serializer_respond.__init__)
-        return Response(serializer_respond.data, status=status.HTTP_201_CREATED)
-
+        return Response(
+            serializer_respond.data, status=status.HTTP_201_CREATED
+        )
 
     def delete(self, request, user_id):
         subscribed_to = get_object_or_404(User, pk=user_id)

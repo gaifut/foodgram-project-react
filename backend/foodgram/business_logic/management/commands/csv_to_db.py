@@ -11,7 +11,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        with open(os.path.join(BASE_DIR, '..', '..', 'data', 'ingredients.csv'),
+        with open(os.path.join(
+            BASE_DIR, '..', '..', 'data', 'ingredients.csv'),
              'r', encoding='utf-8') as csvfile:
             dict_reader = csv.reader(csvfile)
             for row in dict_reader:

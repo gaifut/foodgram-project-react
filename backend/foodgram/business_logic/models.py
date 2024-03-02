@@ -30,31 +30,6 @@ class Ingredient(models.Model):
         return self.name
 
 
-# class Recipe(models.Model):
-#     author = models.ForeignKey(
-#         User, on_delete=models.CASCADE, related_name='recipes',
-#     )
-#     name = models.CharField(max_length=200, verbose_name='Название рецепта')
-#     text = models.TextField(verbose_name='Описание')
-#     cooking_time = models.IntegerField(
-#         verbose_name='Время приготовления (в минутах)',
-#     )
-#     ingredients = models.ManyToManyField(Ingredient)
-#     tags = models.ManyToManyField(Tag)
-#     image = models.ImageField(
-#         verbose_name='Изображение',
-#         upload_to='business_logic/images/',
-#         default=None,
-#     )
-#     published_at = models.DateTimeField(auto_now_add=True)
-#     is_favorited = models.BooleanField(default=False)
-#     is_in_shopping_cart = models.BooleanField(default=False)
-
-    # def __str__(self) -> str:
-    #     return self.name
-
-
-
 class Recipe(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='recipes',
@@ -74,8 +49,12 @@ class Recipe(models.Model):
     published_at = models.DateTimeField(auto_now_add=True)
     is_favorited = models.BooleanField(default=False)
     is_in_shopping_cart = models.BooleanField(default=False)
-    added_to_shopping_cart_by = models.ManyToManyField(User, related_name='recipe_added_to_shopping_cart_by', blank=True)
-    favorited_by = models.ManyToManyField(User, related_name='recipe_favorited_by', blank=True)
+    added_to_shopping_cart_by = models.ManyToManyField(
+        User, related_name='recipe_added_to_shopping_cart_by', blank=True
+        )
+    favorited_by = models.ManyToManyField(
+        User, related_name='recipe_favorited_by', blank=True
+        )
 
     def __str__(self) -> str:
         return self.name
@@ -100,7 +79,6 @@ class Subscription(models.Model):
     subscriber = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='subscriber')
 
-
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -114,11 +92,3 @@ class Subscription(models.Model):
             f'{self.subscriber.username}'
             f' subscribed_to {self.subscribed_to.username}'
         )
-
-
-# class UserRecipe(models.Model):
-#     user = models.ForeignKey(
-#         User, on_delete=models.CASCADE, related_name='user_recipe')
-#     recipe = models.ForeignKey(
-#         Recipe, on_delete=models.CASCADE, related_name='user_recipe'
-#     )

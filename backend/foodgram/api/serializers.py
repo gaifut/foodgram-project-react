@@ -4,15 +4,13 @@ from rest_framework import serializers
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer
-from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
 
 from business_logic.models import (
-    Tag, Ingredient, IngredientRecipe, Recipe, Subscription #UserRecipe
+    Ingredient, IngredientRecipe, Recipe, Subscription, Tag
 )
 from users.models import User
-from business_logic.pagination import CustomPagination
 
 
 class Base64ImageField(serializers.ImageField):
@@ -58,7 +56,6 @@ class IngredientListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
-
 
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
@@ -223,18 +220,25 @@ class SubscirptionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
         fields = ('subscribed_to', 'subscriber')
-    
+
     def validate(self, data):
         subscriber = data.get('subscriber')
         subscribed_to = data.get('subscribed_to')
 
         if subscriber == subscribed_to:
-            raise serializers.ValidationError('Нельзя подписаться на самого себя')
+            raise serializers.ValidationError(
+                'Нельзя подписаться на самого себя'
+            )
 
-        if Subscription.objects.filter(subscriber=subscriber, subscribed_to=subscribed_to).exists():
-            raise serializers.ValidationError('Вы уже подписаны на данного пользователя.')
+        if Subscription.objects.filter(
+            subscriber=subscriber, subscribed_to=subscribed_to
+        ).exists():
+            raise serializers.ValidationError(
+                'Вы уже подписаны на данного пользователя.'
+            )
 
         return data
+
 
 class DisplayRecipesSubscriptionSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
@@ -249,13 +253,21 @@ class DisplayRecipesSubscriptionSerializer(serializers.ModelSerializer):
 
 class SubscirptionRespondSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='subscribed_to.id', read_only=True)
-    email = serializers.EmailField(source='subscribed_to.email', read_only=True)
-    username = serializers.CharField(source='subscribed_to.username', read_only=True)
-    first_name = serializers.CharField(source='subscribed_to.first_name', read_only=True)
-    last_name = serializers.CharField(source='subscribed_to.last_name', read_only=True)
-    is_subscribed = serializers.BooleanField(source='subscribed_to.is_subscribed', read_only=True)
+    email = serializers.EmailField(
+        source='subscribed_to.email', read_only=True
+    )
+    username = serializers.CharField(
+        source='subscribed_to.username', read_only=True)
+    first_name = serializers.CharField(
+        source='subscribed_to.first_name', read_only=True
+    )
+    last_name = serializers.CharField(
+        source='subscribed_to.last_name', read_only=True
+    )
+    is_subscribed = serializers.BooleanField(
+        source='subscribed_to.is_subscribed', read_only=True
+    )
     recipes = serializers.SerializerMethodField()
-
 
     class Meta:
         model = Subscription
@@ -263,21 +275,16 @@ class SubscirptionRespondSerializer(serializers.ModelSerializer):
             'id', 'email', 'username', 'first_name',
             'last_name', 'recipes', 'is_subscribed',
             'subscribed_to', 'subscriber',
-        ) 
+        )
 
     def get_recipes(self, subscription):
-        print('subscription: ', subscription)
         request = self.context.get('request')
         recipes = Recipe.objects.filter(author=subscription.subscribed_to.id)
-        print('recipes first time: ', recipes)      
-        print('request: ', request.__init__)
         if request and not request.user.is_anonymous:
             recipes_limit = request.query_params.get('recipes_limit')
-            print('limit number: ', recipes_limit)
             if recipes_limit:
                 try:
                     recipes = recipes[:int(recipes_limit)]
-                    print('recipes final: ', recipes)
                 except TypeError:
                     pass
 
@@ -287,28 +294,26 @@ class SubscirptionRespondSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-
         data.pop('subscribed_to')
         data.pop('subscriber')
-
         data['recipes_count'] = instance.subscribed_to.recipes.count()
-
         return data
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
-    added_to_shopping_cart_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    added_to_shopping_cart_by = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all()
+    )
 
     class Meta:
         model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time', 'added_to_shopping_cart_by')
+        fields = (
+            'id', 'name', 'image', 'cooking_time', 'added_to_shopping_cart_by'
+        )
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        print(data)
-    
         data.pop('added_to_shopping_cart_by')
-
         return data
 
 
@@ -327,7 +332,9 @@ class FavoriteSerializer(serializers.ModelSerializer):
     cooking_time = serializers.IntegerField(
         min_value=1,
     )
-    favorited_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    favorited_by = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all()
+    )
 
     class Meta:
         model = Recipe
@@ -335,8 +342,5 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        print(data)
-    
         data.pop('favorited_by')
-
         return data
