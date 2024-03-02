@@ -12,13 +12,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         with open(os.path.join(
-            BASE_DIR, '..', '..', 'data', 'ingredients.csv'),
-             'r', encoding='utf-8') as csvfile:
+            BASE_DIR, '..', '..', 'data', 'ingredients.csv'
+        ), 'r', encoding='utf-8') as csvfile:
             dict_reader = csv.reader(csvfile)
             for row in dict_reader:
                 ingredient, created = Ingredient.objects.get_or_create(
                     name=row[0],
                     measurement_unit=row[1],
-                   )
+                )
                 if created:
                     ingredient.save()

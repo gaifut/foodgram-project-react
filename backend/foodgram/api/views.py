@@ -165,7 +165,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             recipe.save()
             serializer = FavoriteSerializer(
                 recipe,
-                )
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Recipe.DoesNotExist:
             return Response(
@@ -177,15 +177,15 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         recipe_id = kwargs.get('recipe_pk')
         try:
             recipe = Recipe.objects.get(id=recipe_id)
-            if (recipe.is_favorited and
-                    recipe.favorited_by.filter(id=request.user.id).exists()):
+            if (recipe.is_favorited and recipe
+                    .favorited_by.filter(id=request.user.id).exists()):
                 recipe.is_favorited = False
                 recipe.favorited_by.remove(request.user)
                 recipe.save()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
-                    {'error':
-                     'Нельзя убрать из избранного рецепт, которого там нет.'},
+                    {'error': 'Нельзя убрать из избранного рецепт,'
+                     'которого там нет.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
         except Recipe.DoesNotExist:
