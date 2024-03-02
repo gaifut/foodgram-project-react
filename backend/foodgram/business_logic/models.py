@@ -49,7 +49,6 @@ class Recipe(models.Model):
     published_at = models.DateTimeField(auto_now_add=True)
     is_favorited = models.BooleanField(default=False)
     is_in_shopping_cart = models.BooleanField(default=False)
-    added_to_shopping_cart_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='added_recipes')
 
     def __str__(self) -> str:
         return self.name

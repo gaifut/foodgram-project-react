@@ -228,10 +228,10 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 class ShoppingCartViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthorAdminSuperuserOrReadOnlyPermission,)
 
-    def get_queryset(self):
-        user = self.request.user
-        queryset = Recipe.objects.filter(shopping_cart_users=user, is_in_shopping_cart=True)
-        return queryset
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     queryset = Recipe.objects.filter(shopping_cart_users=user, is_in_shopping_cart=True)
+    #     return queryset
 
     def create(self, request, *args, **kwargs):
         recipe_id = kwargs.get('recipe_pk')
@@ -257,18 +257,15 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
         print(self.__init__)
         recipe_id = kwargs.get('recipe_pk')
 
-        recipes = Recipe.objects.filter(added_to_shopping_cart_by=self.user, is_in_shopping_cart=True)
-        print('recipes!!', recipes)
-
         try:
             recipe = Recipe.objects.get(id=recipe_id)
             print(recipe)
             print(recipe.is_in_shopping_cart)
-            if recipe not in recipes:
-                return Response(
-                    {'error': 'Нельзя удалить рецепт, которого нет в корзине.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            # if not recipe.is_in_shopping_cart:
+            #     return Response(
+            #         {'error': 'Нельзя удалить рецепт, которого нет в корзине.'},
+            #         status=status.HTTP_400_BAD_REQUEST
+            #     )
             recipe.is_in_shopping_cart = False
             recipe.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
