@@ -181,7 +181,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             check_unique_id.append(ingredient_id)
         if len(check_unique_id) != len(set(check_unique_id)):
             raise ValidationError('Ингридиенты должны быть уникальными.')
-
         try:
             tags_data = validated_data.pop('tags')
         except KeyError:
@@ -190,7 +189,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             raise ValidationError('Список тегов не может быть пустым.')
         if len(tags_data) != len(set(tags_data)):
             raise ValidationError('Теги должны быть уникальными.')
-
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.cooking_time = validated_data.get(
@@ -210,7 +208,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         if amount < 1:
             raise ValidationError('Кол-во ингридиентов должно быть > 1.')
         instance.tags.set(tags_data)
-
         instance.save()
         return instance
 
