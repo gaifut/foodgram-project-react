@@ -18,7 +18,7 @@ from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
 
-from business_logic.models import Ingredient, Recipe, Tag, Subscription
+from business_logic.models import Ingredient, Recipe, Tag, Subscription #UserRecipe
 from business_logic.pagination import CustomPagination
 from users.models import User
 from .permissions import IsAuthorAdminSuperuserOrReadOnlyPermission
@@ -113,7 +113,6 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
         return IngredientSerializer
 
 
-
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all().order_by('-published_at')
     filter_backends = (DjangoFilterBackend,)
@@ -128,45 +127,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-
-    # @action(detail=True, permission_classes=[IsAuthenticated], methods=['POST'])
-    # def add_to_favorites(self, request, *args, **kwargs):
-    #     recipe_id = kwargs.get('pk')
-    #     try:
-    #         recipe = Recipe.objects.get(id=recipe_id)
-    #         if recipe.is_favorited:
-    #             return Response(
-    #                 {'error': 'Рецепт уже добавлен в избранное'},
-    #                 status=status.HTTP_400_BAD_REQUEST
-    #             )
-    #         recipe.is_favorited = True
-    #         recipe.save()
-    #         serializer = FavoriteSerializer(recipe)
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #     except Recipe.DoesNotExist:
-    #         return Response(
-    #             {'ошибка': 'рецепт не найден'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-
-    # @action(detail=True, permission_classes=[IsAuthenticated], methods=['DELETE'])
-    # def remove_from_favorites(self, request, *args, **kwargs):
-    #     recipe_id = kwargs.get('pk')
-    #     try:
-    #         recipe = Recipe.objects.get(id=recipe_id)
-    #         if not recipe.is_favorited:
-    #             return Response(
-    #                 {'error': 'Рецепт не был добавлен в избранное'},
-    #                 status=status.HTTP_400_BAD_REQUEST
-    #             )
-    #         recipe.is_favorited = False
-    #         recipe.save()
-    #         return Response(status=status.HTTP_204_NO_CONTENT)
-    #     except Recipe.DoesNotExist:
-    #         return Response(
-    #             {'ошибка': 'рецепт не найден'},
-    #             status=status.HTTP_404_NOT_FOUND
-    #         )
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -200,6 +160,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             recipe.is_favorited = True
+            recipe.favorited_by.add(request.user)
             recipe.save()
             serializer = FavoriteSerializer(
                 recipe,
@@ -215,9 +176,15 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         recipe_id = kwargs.get('recipe_pk')
         try:
             recipe = Recipe.objects.get(id=recipe_id)
-            recipe.is_favorited = False
-            recipe.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            if recipe.is_favorited and recipe.favorited_by.filter(id=request.user.id).exists():
+                recipe.is_favorited = False
+                recipe.favorited_by.remove(request.user)
+                recipe.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(
+                    {'error': 'Нельзя убрать из избранного рецепт, которого там нет.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         except Recipe.DoesNotExist:
             return Response(
                 {'ошибка': 'рецепт не найден'},
@@ -227,11 +194,6 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
 class ShoppingCartViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthorAdminSuperuserOrReadOnlyPermission,)
-
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     queryset = Recipe.objects.filter(shopping_cart_users=user, is_in_shopping_cart=True)
-    #     return queryset
 
     def create(self, request, *args, **kwargs):
         recipe_id = kwargs.get('recipe_pk')
@@ -243,6 +205,7 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             recipe.is_in_shopping_cart = True
+            recipe.added_to_shopping_cart_by.add(request.user)
             recipe.save()
             serializer = ShoppingCartSerializer(recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -252,24 +215,20 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
     def delete(self, request, *args, **kwargs):
-        print(self.__init__)
         recipe_id = kwargs.get('recipe_pk')
 
         try:
             recipe = Recipe.objects.get(id=recipe_id)
-            print(recipe)
-            print(recipe.is_in_shopping_cart)
-            # if not recipe.is_in_shopping_cart:
-            #     return Response(
-            #         {'error': 'Нельзя удалить рецепт, которого нет в корзине.'},
-            #         status=status.HTTP_400_BAD_REQUEST
-            #     )
-            recipe.is_in_shopping_cart = False
-            recipe.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
+            if recipe.is_in_shopping_cart and recipe.added_to_shopping_cart_by.filter(id=request.user.id).exists():
+                recipe.is_in_shopping_cart = False
+                recipe.added_to_shopping_cart_by.remove(request.user)
+                recipe.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(
+                    {'error': 'Нельзя удалить рецепт, которого нет в корзине.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         except Recipe.DoesNotExist:
             return Response(
                 {'ошибка': 'рецепт не найден'},
