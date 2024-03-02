@@ -222,8 +222,8 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
 
         try:
             recipe = Recipe.objects.get(id=recipe_id)
-            if (recipe.is_in_shopping_cart and
-                    recipe.added_to_shopping_cart_by.filter(
+            if (recipe.is_in_shopping_cart
+                and recipe.added_to_shopping_cart_by.filter(
                         id=request.user.id).exists()):
                 recipe.is_in_shopping_cart = False
                 recipe.added_to_shopping_cart_by.remove(request.user)
@@ -295,7 +295,7 @@ class SubscriptionView(ListAPIView):
         serializer_respond = SubscirptionRespondSerializer(
             instance=subscription,
             context={'request': request}
-            )
+        )
         return Response(
             serializer_respond.data, status=status.HTTP_201_CREATED
         )
@@ -311,7 +311,7 @@ class SubscriptionView(ListAPIView):
         if subscriptions.exists():
             subscriptions.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(
-                    {'error': 'Нельзя удалить несуществующую подписку'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        return Response({
+            'error': 'Нельзя удалить несуществующую подписку'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
