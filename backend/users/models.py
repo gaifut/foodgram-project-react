@@ -43,7 +43,6 @@ class User(AbstractUser):
         choices=USER_ROLES,
         default=USER
     )
-    is_subscribed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['username']
