@@ -145,6 +145,14 @@ class Favorite(models.Model):
         Recipe, on_delete=models.CASCADE, related_name='favorite_recipe'
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite'
+            )
+        ]
+
     def __str__(self) -> str:
         return f'{self.user} {self.recipe}'
 

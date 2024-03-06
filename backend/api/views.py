@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
-from recipes.models import Ingredient, Recipe, Subscription, Tag
+from recipes.models import Ingredient, Recipe, Subscription, Tag, Favorite
 from api.pagination import CustomPagination
 from users.models import User
 from .filters import RecipeFilter
@@ -25,7 +25,8 @@ from .serializers import (
     CustomUserSerializer, FavoriteSerializer,
     IngredientSerializer, RecipeGetSerializer, RecipeSerializer,
     ShoppingCartSerializer, ShoppingCartListSerializer,
-    SubscirptionCreateSerializer, SubscirptionRespondSerializer, TagSerializer
+    SubscirptionCreateSerializer, SubscirptionRespondSerializer, TagSerializer,
+    FavoriteDisplaySerializer
 )
 
 
@@ -116,60 +117,13 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
 
-class FavoriteViewSet(viewsets.ModelViewSet):
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    serializer_class = FavoriteSerializer
-
-    # def create(self, request, *args, **kwargs):
-    #     recipe_id = kwargs.get('recipe_pk')
-    #     try:
-    #         recipe = Recipe.objects.get(id=recipe_id)
-    #         if recipe.is_favorited:
-    #             return Response(
-    #                 {'error': 'Рецепт уже добавлен в избранное'},
-    #                 status=status.HTTP_400_BAD_REQUEST
-    #             )
-    #         recipe.is_favorited = True
-    #         recipe.favorited_by.add(request.user)
-    #         recipe.save()
-    #         serializer = FavoriteSerializer(
-    #             recipe,
-    #         )
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #     except Recipe.DoesNotExist:
-    #         return Response(
-    #             {'ошибка': 'рецепт не найден'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-
-    # def delete(self, request, *args, **kwargs):
-    #     recipe_id = kwargs.get('recipe_pk')
-    #     try:
-    #         recipe = Recipe.objects.get(id=recipe_id)
-    #         if (recipe.is_favorited and recipe
-    #                 .favorited_by.filter(id=request.user.id).exists()):
-    #             recipe.is_favorited = False
-    #             recipe.favorited_by.remove(request.user)
-    #             recipe.save()
-    #             return Response(status=status.HTTP_204_NO_CONTENT)
-    #         return Response({
-    #             'error': 'Нельзя убрать из избранного рецепт,'
-    #             ' которого там нет.'}, status=status.HTTP_400_BAD_REQUEST
-    #         )
-    #     except Recipe.DoesNotExist:
-    #         return Response(
-    #             {'ошибка': 'рецепт не найден'},
-    #             status=status.HTTP_404_NOT_FOUND
-    #         )
-
-
 class ShoppingCartViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def create(self, request, *args, **kwargs):
         recipe_id = kwargs.get('recipe_pk')
         try:
-            recipe = Recipe.objects.get_object_or_404(id=recipe_id)
+            recipe = get_object_or_404(Recipe, id=recipe_id)
             if recipe.is_in_shopping_cart:
                 return Response(
                     {'error': 'Рецепт уже есть в корзине'},
@@ -245,9 +199,10 @@ class SubscriptionListView(ListAPIView):
 
 class SubscriptionView(ListAPIView):
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    pagination_class = CustomPagination
-    parser_classes = (IsAuthenticated,)
+    serializer_class = SubscirptionRespondSerializer
 
+    def get_queryset(self):
+        return User.objects.filter(subsciber__user=self.request.user)
 
     def post(self, request, user_id):
         subscribed_to = get_object_or_404(User, pk=user_id)
@@ -255,13 +210,12 @@ class SubscriptionView(ListAPIView):
         subscribed_to.save()
         subscriber = request.user
 
-        queryset = User.objects.filter(following__user=self.request.user)
-
         serializer_create = SubscirptionCreateSerializer(
             data={
                 'subscribed_to': subscribed_to.id,
                 'subscriber': subscriber.id,
             })
+        print('serizalizer create: ', serializer_create)
         serializer_create.is_valid(raise_exception=True)
         subscription = serializer_create.save()
 
@@ -287,4 +241,28 @@ class SubscriptionView(ListAPIView):
         return Response({
             'error': 'Нельзя удалить несуществующую подписку'},
             status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class FavoriteView(ListAPIView):
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    
+    def post(self, request, recipe_pk):
+        user = request.user
+
+        serializer_create = FavoriteSerializer(
+            data={
+                'user': user.id,
+                'recipe': recipe_pk,
+            }
+        )
+        print('serizalizer create: ', serializer_create)
+        serializer_create.is_valid(raise_exception=True)
+        favorite = serializer_create.save()
+
+        serializer_respond = FavoriteDisplaySerializer(
+            instance=favorite,
+        )
+        return Response(
+            serializer_respond.data, status=status.HTTP_201_CREATED
         )

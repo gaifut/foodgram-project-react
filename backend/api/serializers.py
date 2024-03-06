@@ -137,10 +137,14 @@ class RecipeGetSerializer(serializers.ModelSerializer):
         )
 
     def get_is_favorited(self, obj):
-        return False
+        return Favorite.objects.filter(
+            user=obj.author, recipe=obj.id
+        ).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        return False
+        return ShoppingCart.objects.filter(
+         user=obj.author, recipe=obj.id
+        ).exists()
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -168,6 +172,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         ).exists()
 
     def get_is_in_shopping_cart(self, obj):
+        print(type(obj))
+        print(obj.__init__)
         return ShoppingCart.objects.filter(
          user=obj.author, recipe=obj.id
         ).exists()
@@ -213,6 +219,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientRecipe.objects.bulk_create(ingredients_data_list)
 
     def create(self, validated_data):
+        print('VDDDD: ', validated_data)
         ingredients_data = validated_data.pop('ingredients_recipe')
         tags_data = validated_data.pop('tags')
         validated_data['author'] = self.context['request'].user
@@ -249,22 +256,6 @@ class SubscirptionCreateSerializer(serializers.ModelSerializer):
         model = Subscription
         fields = ('subscribed_to', 'subscriber')
 
-    def validate(self, data):
-        subscriber = data.get('subscriber')
-        subscribed_to = data.get('subscribed_to')
-
-        if subscriber == subscribed_to:
-            raise serializers.ValidationError(
-                'Нельзя подписаться на самого себя'
-            )
-
-        if Subscription.objects.filter(
-            subscriber=subscriber, subscribed_to=subscribed_to
-        ).exists():
-            raise serializers.ValidationError(
-                'Вы уже подписаны на данного пользователя.'
-            )
-        return data
 
 
 class DisplayRecipesSubscriptionSerializer(serializers.ModelSerializer):
@@ -274,7 +265,8 @@ class DisplayRecipesSubscriptionSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
-class SubscirptionRespondSerializer(serializers.ModelSerializer):
+
+class SubscirptionRespondSerializer(CustomUserSerializer):
     # id = serializers.IntegerField(source='subscribed_to.id', read_only=True)
     # email = serializers.EmailField(
     #     source='subscribed_to.email', read_only=True
@@ -287,7 +279,7 @@ class SubscirptionRespondSerializer(serializers.ModelSerializer):
     # last_name = serializers.CharField(
     #     source='subscribed_to.last_name', read_only=True
     # )
-    # is_subscribed = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
@@ -358,39 +350,34 @@ class ShoppingCartListSerializer(serializers.ModelSerializer):
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
-    user = CustomUserSerializer(read_only=True)
-    recipe = RecipeSerializer(read_only=True)
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all())
     
     class Meta:
         model = Favorite
         fields = ('user', 'recipe')
-
+    
     def validate(self, data):
-        recipe_id = self.context['request'].parser_context['kwargs']['recipe_pk']
-        print('recipe_id:', recipe_id)
-        try:
-            recipe = Recipe.objects.get(id=recipe_id)
-            print(recipe)
-            if recipe.is_favorited:
-                raise ValidationError('Рецепт уже добавлен в избранное')
-            return data
-        except Recipe.DoesNotExist:
-            raise ValidationError('ошибка: рецепт не найден')
-
-    def create(self, validated_data):
-        print('validated_data: ', validated_data)
-        recipe_id = validated_data.get('recipe_pk')
-        recipe = Recipe.objects.get(id=recipe_id)
-        recipe.is_favorited = True
-        recipe.save()
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        print(data)
-        data.pop('user')
-        data.pop('recipe')
-        data['id'] = instance.recipe.id()
-        data['name'] = instance.recipe.name()
-        data['image'] = instance.recipe.image()
-        data['cooking_time'] = instance.recipe.cooking_time()
+        print('DATA IN VALIDATE METHOD', data)
+        # recipe_id = self.context['request'].parser_context['kwargs']['recipe_pk']
+        # user_id = self.context['request'].user.id
+        # print(user_id)
+        # print('recipe_id:', recipe_id)
+        # try:
+        #     recipe = Recipe.objects.get(id=recipe_id)
+        #     if Favorite.objects.get(recipe_id=recipe_id, user_id=user_id).exists():
+        #         raise ValidationError('Рецепт уже добавлен в избранное')
+        # except Recipe.DoesNotExist:
+        #     raise ValidationError('ошибка: рецепт не найден')
         return data
+
+
+class FavoriteDisplaySerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='recipe.id')
+    name = serializers.CharField(source='recipe.name')
+    image = serializers.ImageField(source='recipe.image')
+    cooking_time = serializers.IntegerField(source='recipe.cooking_time')
+
+    class Meta:
+        model = Favorite
+        fields = ('id', 'name', 'image', 'cooking_time')
