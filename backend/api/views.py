@@ -1,9 +1,11 @@
+from io import BytesIO
+
 from rest_framework import (
     filters, viewsets, status, permissions,
 )
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count
-
+from django.db.models import Count, Sum
+from django.http import HttpResponse, FileResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
@@ -17,7 +19,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
-from recipes.models import Ingredient, Recipe, Subscription, Tag, Favorite, ShoppingCart
+from recipes.models import Ingredient, Recipe, Subscription, Tag, Favorite, ShoppingCart, IngredientRecipe
 from api.pagination import CustomPagination
 from users.models import User
 from .filters import RecipeFilter
@@ -31,51 +33,67 @@ from .serializers import (
 )
 
 
-class PlainTextRenderer(BaseRenderer):
-    media_type = 'text/plain'
-    format = 'txt'
+def make_file(ingredients):
+    ingredients_info = []
+    for ingredient in ingredients:
+        name = ingredient['ingredient__name']
+        amount = ingredient['ingredient__measurement_unit']
+        measurement_unit = ingredient['total_qty']
+        ingredients_info.append(f'{name}: {amount} {measurement_unit}')
+    content = '\n'.join(ingredients_info)
+    response = FileResponse(content, content_type='text/plain')
+    response['Content-Disposition'] = (
+            'attachment; filename="shopping_cart.txt"'
+        )
+    return response
 
-    def render(self, data, media_type=None, renderer_context=None):
-        ingredients_info = {}
 
-        if isinstance(data, list):
-            for item in data:
-                ingredients = item.get('ingredients', [])
-                for ingredient in ingredients:
-                    name = ingredient.get('name', '')
-                    amount = ingredient.get('amount', 0)
-                    measurement_unit = ingredient.get('measurement_unit', '')
 
-                    if name in ingredients_info:
-                        ingredients_info[name]['amount'] += amount
-                    else:
-                        ingredients_info[name] = {
-                            'amount': amount,
-                            'measurement_unit': measurement_unit
-                        }
+# class PlainTextRenderer(BaseRenderer):
+#     media_type = 'text/plain'
+#     format = 'txt'
 
-        else:
-            ingredients = data.get('ingredients', [])
-            for ingredient in ingredients:
-                name = ingredient.get('name', '')
-                amount = ingredient.get('amount', 0)
-                measurement_unit = ingredient.get('measurement_unit', '')
+#     def render(self, data, media_type=None, renderer_context=None):
+#         ingredients_info = {}
 
-                if name in ingredients_info:
-                    ingredients_info[name]['amount'] += amount
-                else:
-                    ingredients_info[name] = {
-                        'amount': amount,
-                        'measurement_unit': measurement_unit
-                    }
+#         if isinstance(data, list):
+#             for item in data:
+#                 ingredients = item.get('ingredients', [])
+#                 for ingredient in ingredients:
+#                     name = ingredient.get('name', '')
+#                     amount = ingredient.get('amount', 0)
+#                     measurement_unit = ingredient.get('measurement_unit', '')
 
-        ingredients_text = ''
-        for name, info in ingredients_info.items():
-            ingredients_text += (
-                f'{name}: {info["amount"]} {info["measurement_unit"]}\n'
-            )
+#                     if name in ingredients_info:
+#                         ingredients_info[name]['amount'] += amount
+#                     else:
+#                         ingredients_info[name] = {
+#                             'amount': amount,
+#                             'measurement_unit': measurement_unit
+#                         }
 
-        return ingredients_text
+#         else:
+#             ingredients = data.get('ingredients', [])
+#             for ingredient in ingredients:
+#                 name = ingredient.get('name', '')
+#                 amount = ingredient.get('amount', 0)
+#                 measurement_unit = ingredient.get('measurement_unit', '')
+
+#                 if name in ingredients_info:
+#                     ingredients_info[name]['amount'] += amount
+#                 else:
+#                     ingredients_info[name] = {
+#                         'amount': amount,
+#                         'measurement_unit': measurement_unit
+#                     }
+
+#         ingredients_text = ''
+#         for name, info in ingredients_info.items():
+#             ingredients_text += (
+#                 f'{name}: {info["amount"]} {info["measurement_unit"]}\n'
+#             )
+
+#         return ingredients_text
 
 
 class CustomUserViewSet(UserViewSet):
@@ -119,18 +137,20 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ShoppingCartListView(APIView):
-    renderer_classes = [PlainTextRenderer]
+    #renderer_classes = [PlainTextRenderer]
     permission_classes = (permissions.IsAuthenticated,)
     filterset_class = RecipeFilter
 
     def get(self, request, *args, **kwargs):
-        recipes = Recipe.objects.filter(is_in_shopping_cart=True)
-        serializer = ShoppingCartListSerializer(recipes, many=True)
-        response = Response(serializer.data)
-        response['Content-Disposition'] = (
-            'attachment; filename="shopping_cart.txt"'
+        ingredients = IngredientRecipe.objects.filter(
+            recipe__shopping_cart__user=request.user
+        ).values(
+            'ingredient__name', 'ingredient__measurement_unit'
+        ).annotate(
+            total_qty=Sum('amount')
         )
-        return response
+
+        return make_file(ingredients)
 
 
 class SubscriptionListView(ListAPIView):

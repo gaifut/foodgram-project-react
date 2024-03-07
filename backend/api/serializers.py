@@ -51,6 +51,7 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'color', 'slug')
 
 
+
 class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -304,17 +305,17 @@ class SubscirptionRespondSerializer(serializers.ModelSerializer):
     
     def get_is_subscribed(self, obj):
         return Subscription.objects.filter(
-            subscribed_to=obj.subscribed_to,
-            subscriber=obj.subscriber
+            subscribed_to=obj,
+            subscriber=self.context["request"].user
         ).exists()
 
-    def get_recipes_count(self, subscription):
+    def get_recipes_count(self, user):
         return Recipe.objects.filter(
-            author=subscription.subscribed_to.id).count()
+            author=user).count()
 
-    def get_recipes(self, subscription):
+    def get_recipes(self, user):
         request = self.context.get('request')
-        recipes = Recipe.objects.filter(author=subscription.subscribed_to.id)
+        recipes = Recipe.objects.filter(author=user)
         recipes_limit = request.query_params.get('recipes_limit')
         if recipes_limit:
             try:

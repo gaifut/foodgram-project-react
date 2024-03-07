@@ -10,7 +10,10 @@ class RecipeFilter(f.FilterSet):
     tags = f.AllValuesMultipleFilter(
         field_name='tags__slug', lookup_expr='contains'
     )
-    is_favorited = f.BooleanFilter(field_name='is_favorited', method='filter_is_favorited')
+    is_favorited = f.BooleanFilter(
+        field_name='is_favorited',
+        method='filter_is_favorited'
+    )
     is_in_shopping_cart = f.BooleanFilter(
         field_name='is_in_shopping_cart',
         method='filter_is_in_shopping_cart'
@@ -20,10 +23,6 @@ class RecipeFilter(f.FilterSet):
         model = Recipe
         fields = ['author', 'tags', 'is_favorited', 'is_in_shopping_cart']
 
-    # def filter_is_favorited(self, queryset, name, value):
-    #     lookup = '__'.join([name, 'is_favorited'])
-    #     return queryset.filter(**{lookup: value})
-    
     def filter_is_favorited(self, queryset, name, value):
         if self.request.user.is_anonymous:
             subquery = Favorite.objects.filter(
@@ -40,7 +39,7 @@ class RecipeFilter(f.FilterSet):
             is_favorited=Exists(subquery)
         )
         return queryset.filter(is_favorited=value)
-    
+
     def filter_is_in_shopping_cart(self, queryset, name, value):
         if self.request.user.is_anonymous:
             subquery = ShoppingCart.objects.filter(
