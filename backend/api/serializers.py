@@ -266,7 +266,7 @@ class DisplayRecipesSubscriptionSerializer(serializers.ModelSerializer):
 
 
 
-class SubscirptionRespondSerializer(CustomUserSerializer):
+class SubscirptionRespondSerializer(serializers.ModelSerializer):
     # id = serializers.IntegerField(source='subscribed_to.id', read_only=True)
     # email = serializers.EmailField(
     #     source='subscribed_to.email', read_only=True
@@ -288,8 +288,10 @@ class SubscirptionRespondSerializer(CustomUserSerializer):
         fields = (
             'id', 'email', 'username', 'first_name',
             'last_name', 'recipes', 'is_subscribed',
-            'recipes_count', 'subscribed_to', 'subscriber'  
+            'recipes_count',  
         )
+
+        #'subscribed_to', 'subscriber'
     
     def get_is_subscribed(self, obj):
         return Subscription.objects.filter(
@@ -315,28 +317,11 @@ class SubscirptionRespondSerializer(CustomUserSerializer):
             recipes, many=True, context=self.context
         ).data
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data.pop('subscribed_to')
-        data.pop('subscriber')
-        return data
-
-
-class ShoppingCartSerializer(serializers.ModelSerializer):
-    added_to_shopping_cart_by = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all()
-    )
-
-    class Meta:
-        model = Recipe
-        fields = (
-            'id', 'name', 'image', 'cooking_time', 'added_to_shopping_cart_by'
-        )
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data.pop('added_to_shopping_cart_by')
-        return data
+    # def to_representation(self, instance):
+    #     data = super().to_representation(instance)
+    #     data.pop('subscribed_to')
+    #     data.pop('subscriber')
+    #     return data
 
 
 class ShoppingCartListSerializer(serializers.ModelSerializer):
@@ -359,25 +344,26 @@ class FavoriteSerializer(serializers.ModelSerializer):
     
     def validate(self, data):
         print('DATA IN VALIDATE METHOD', data)
-        # recipe_id = self.context['request'].parser_context['kwargs']['recipe_pk']
-        # user_id = self.context['request'].user.id
-        # print(user_id)
-        # print('recipe_id:', recipe_id)
-        # try:
-        #     recipe = Recipe.objects.get(id=recipe_id)
-        #     if Favorite.objects.get(recipe_id=recipe_id, user_id=user_id).exists():
-        #         raise ValidationError('Рецепт уже добавлен в избранное')
-        # except Recipe.DoesNotExist:
-        #     raise ValidationError('ошибка: рецепт не найден')
+        user = data.get('user')
+        recipe = data.get('recipe')
+        print('RECIPE ID: ', recipe.id)
+        if Favorite.objects.filter(user=user, recipe=recipe).exists():
+            raise ValidationError('Рецепт уже в избранном.')
         return data
 
 
 class FavoriteDisplaySerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source='recipe.id')
-    name = serializers.CharField(source='recipe.name')
-    image = serializers.ImageField(source='recipe.image')
-    cooking_time = serializers.IntegerField(source='recipe.cooking_time')
 
     class Meta:
-        model = Favorite
+        model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all())
+
+    class Meta:
+        model = ShoppingCart
+        fields = ('user', 'recipe')
+

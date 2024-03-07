@@ -79,14 +79,6 @@ class Recipe(models.Model):
         default=None,
     )
     published_at = models.DateTimeField(auto_now_add=True)
-    # is_favorited = models.BooleanField(default=False)
-    # is_in_shopping_cart = models.BooleanField(default=False)
-    # added_to_shopping_cart_by = models.ManyToManyField(
-    #     User, related_name='recipe_added_to_shopping_cart_by', blank=True
-    # )
-    # favorited_by = models.ManyToManyField(
-    #     User, related_name='recipe_favorited_by', blank=True
-    # )
 
     def __str__(self) -> str:
         return self.name
