@@ -228,13 +228,13 @@ class FavoriteView(ListAPIView):
         )
         if not Recipe.objects.filter(pk=recipe_pk).exists():
             raise NotFound('Рецепта не существует.')
-        if favorites.exists():
-            favorites.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({
-            'error': 'рецепта нет в избранном'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        if not favorites.exists():
+            return Response({
+                'error': 'рецепта нет в избранном'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        favorites.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ShoppingCartView(ListAPIView):
@@ -249,69 +249,29 @@ class ShoppingCartView(ListAPIView):
             }
         )
         serializer_create.is_valid(raise_exception=True)
-        favorite = serializer_create.save()
+        shopping_cart = serializer_create.save()
 
         serializer_respond = FavoriteDisplaySerializer(
-            instance=favorite.recipe,
+            instance=shopping_cart.recipe,
         )
         return Response(
             serializer_respond.data, status=status.HTTP_201_CREATED
         )
-    
+
     def delete(self, request, recipe_pk):
         user_id = request.user.id
-        favorites = ShoppingCart.objects.filter(
+        shopping_cart = ShoppingCart.objects.filter(
             user=user_id,
             recipe=recipe_pk
         )
         if not Recipe.objects.filter(pk=recipe_pk).exists():
             raise NotFound('Рецепта не существует.')
-        if favorites.exists():
-            favorites.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({
-            'error': 'рецепта нет в корзине'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    # def create(self, request, *args, **kwargs):
-    #     recipe_id = kwargs.get('recipe_pk')
-    #     try:
-    #         recipe = get_object_or_404(Recipe, id=recipe_id)
-    #         if recipe.is_in_shopping_cart:
-    #             return Response(
-    #                 {'error': 'Рецепт уже есть в корзине'},
-    #                 status=status.HTTP_400_BAD_REQUEST
-    #             )
-    #         recipe.is_in_shopping_cart = True
-    #         recipe.added_to_shopping_cart_by.add(request.user)
-    #         recipe.save()
-    #         serializer = ShoppingCartSerializer(recipe)
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #     except Recipe.DoesNotExist:
-    #         return Response(
-    #             {'ошибка': 'рецепт не найден'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-
-    # def delete(self, request, *args, **kwargs):
-    #     recipe_id = kwargs.get('recipe_pk')
-
-    #     try:
-    #         recipe = Recipe.objects.get(id=recipe_id)
-    #         if (recipe.is_in_shopping_cart
-    #             and recipe.added_to_shopping_cart_by.filter(
-    #                 id=request.user.id).exists()):
-    #             recipe.is_in_shopping_cart = False
-    #             recipe.added_to_shopping_cart_by.remove(request.user)
-    #             recipe.save()
-    #             return Response(status=status.HTTP_204_NO_CONTENT)
-    #         return Response({
-    #             'error': 'Нельзя удалить рецепт,'
-    #             ' которого нет в корзине.'}, status=status.HTTP_400_BAD_REQUEST
-    #         )
-    #     except Recipe.DoesNotExist:
-    #         return Response(
-    #             {'ошибка': 'рецепт не найден'},
-    #             status=status.HTTP_404_NOT_FOUND
-    #         )
+   
+        if not shopping_cart.exists():
+            return Response({
+                'error': 'рецепта нет в корзине'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        shopping_cart.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+        

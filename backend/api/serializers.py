@@ -137,14 +137,20 @@ class RecipeGetSerializer(serializers.ModelSerializer):
         )
 
     def get_is_favorited(self, obj):
-        return Favorite.objects.filter(
-            user=obj.author, recipe=obj.id
-        ).exists()
+        request = self.context['request']
+        if request.user.is_anonymous:
+            return False
+        return bool(request and Favorite.objects.filter(
+            user=request.user, recipe=obj.id
+        ).exists())
 
     def get_is_in_shopping_cart(self, obj):
-        return ShoppingCart.objects.filter(
-         user=obj.author, recipe=obj.id
-        ).exists()
+        request = self.context['request']
+        if request.user.is_anonymous:
+            return False
+        return bool(request and ShoppingCart.objects.filter(
+            user=request.user, recipe=obj.id
+        ).exists())
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -167,16 +173,20 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
     def get_is_favorited(self, obj):
-        return Favorite.objects.filter(
-            user=obj.author, recipe=obj.id
-        ).exists()
+        request = self.context['request']
+        if request.user.is_anonymous:
+            return False
+        return bool(request and Favorite.objects.filter(
+            user=request.user, recipe=obj.id
+        ).exists())
 
     def get_is_in_shopping_cart(self, obj):
-        print(type(obj))
-        print(obj.__init__)
-        return ShoppingCart.objects.filter(
-         user=obj.author, recipe=obj.id
-        ).exists()
+        request = self.context['request']
+        if request.user.is_anonymous:
+            return False
+        return bool(request and ShoppingCart.objects.filter(
+            user=request.user, recipe=obj.id
+        ).exists())
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -219,7 +229,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientRecipe.objects.bulk_create(ingredients_data_list)
 
     def create(self, validated_data):
-        print('VDDDD: ', validated_data)
         ingredients_data = validated_data.pop('ingredients_recipe')
         tags_data = validated_data.pop('tags')
         validated_data['author'] = self.context['request'].user
@@ -343,10 +352,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
         fields = ('user', 'recipe')
     
     def validate(self, data):
-        print('DATA IN VALIDATE METHOD', data)
         user = data.get('user')
         recipe = data.get('recipe')
-        print('RECIPE ID: ', recipe.id)
         if Favorite.objects.filter(user=user, recipe=recipe).exists():
             raise ValidationError('Рецепт уже в избранном.')
         return data
@@ -367,3 +374,11 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         model = ShoppingCart
         fields = ('user', 'recipe')
 
+    def validate(self, data):
+        print('DATA IN VALIDATE METHOD', data)
+        user = data.get('user')
+        recipe = data.get('recipe')
+        print('RECIPE ID: ', recipe.id)
+        if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+            raise ValidationError('Рецепт уже в избранном.')
+        return data

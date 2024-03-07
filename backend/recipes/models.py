@@ -123,11 +123,11 @@ class Subscription(models.Model):
             )
         ]
 
-    # def __str__(self):
-    #     return (
-    #         f'{self.subscriber.username}'
-    #         f' subscribed_to {self.subscribed_to.username}'
-    #     )
+    def __str__(self):
+        return (
+            f'{self.subscriber.username}'
+            f' subscribed_to {self.subscribed_to.username}'
+        )
 
 
 class Favorite(models.Model):
