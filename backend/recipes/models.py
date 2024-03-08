@@ -1,5 +1,6 @@
 from django.db import models
-from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
+from django.core.validators import (
+    RegexValidator, MinValueValidator, MaxValueValidator)
 
 from foodgram.constants import (
     CHARFIELD_MAX_LENGTH, COLOR_CHARS_MAX_LENGTH, POSITIVE_SMALL_MIN_VALUE,
@@ -56,7 +57,10 @@ class Recipe(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='recipes',
     )
-    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, verbose_name='Название рецепта')
+    name = models.CharField(
+        max_length=CHARFIELD_MAX_LENGTH,
+        verbose_name='Название рецепта'
+    )
     text = models.TextField(verbose_name='Описание')
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления (в минутах)',

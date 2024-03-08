@@ -1,14 +1,12 @@
-import base64
-
 from rest_framework import serializers
-from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework.exceptions import ValidationError
 
 
 from recipes.models import (
-    Favorite, Ingredient, IngredientRecipe, Recipe, Subscription, Tag,
-    ShoppingCart
+    Favorite, Ingredient, IngredientRecipe, Recipe,
+    ShoppingCart, Subscription, Tag
 )
 from users.models import User
 
@@ -16,7 +14,7 @@ from users.models import User
 class MyBase64ImageField(Base64ImageField):
     def to_internal_value(self, base64_data):
         if not base64_data:
-            raise ValidationError("This field could not be empty")
+            raise ValidationError('Это поле не может быть пустым')
         return super().to_internal_value(base64_data)
 
 
@@ -49,7 +47,6 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'name', 'color', 'slug')
-
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -205,7 +202,9 @@ class RecipeSerializer(serializers.ModelSerializer):
                 ingredient_id = ingredient_data.get('id')
                 amount = ingredient_data.get('amount', 0)
                 if amount < 1:
-                    raise ValidationError('Кол-во ингридиентов должно быть > 1.')
+                    raise ValidationError(
+                        'Кол-во ингридиентов должно быть > 1.'
+                    )
             except ObjectDoesNotExist:
                 raise ValidationError('Ингридиент должен быть в Базе Данных')
             check_unique_id.append(ingredient_id)
@@ -234,7 +233,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags_data = validated_data.pop('tags')
         validated_data['author'] = self.context['request'].user
         recipe = Recipe.objects.create(**validated_data)
-        recipe.tags.set(tags_data)   
+        recipe.tags.set(tags_data)
         self.create_ingredients(ingredients_data, recipe)
         return recipe
 
@@ -266,7 +265,6 @@ class SubscirptionCreateSerializer(serializers.ModelSerializer):
         model = Subscription
         fields = ('subscribed_to', 'subscriber')
 
-
     def validate(self, attrs):
         if attrs.get('subscribed_to') == attrs.get('subscriber'):
             raise ValidationError('Нельзя подписаться на самого себя.')
@@ -277,6 +275,7 @@ class SubscirptionCreateSerializer(serializers.ModelSerializer):
             raise ValidationError('Подписка уже существует.')
         return attrs
 
+
 class DisplayRecipesSubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -284,20 +283,7 @@ class DisplayRecipesSubscriptionSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
-
 class SubscirptionRespondSerializer(serializers.ModelSerializer):
-    # id = serializers.IntegerField(source='subscribed_to.id', read_only=True)
-    # email = serializers.EmailField(
-    #     source='subscribed_to.email', read_only=True
-    # )
-    # username = serializers.CharField(
-    #     source='subscribed_to.username', read_only=True)
-    # first_name = serializers.CharField(
-    #     source='subscribed_to.first_name', read_only=True
-    # )
-    # last_name = serializers.CharField(
-    #     source='subscribed_to.last_name', read_only=True
-    # )
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
@@ -307,11 +293,9 @@ class SubscirptionRespondSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'email', 'username', 'first_name',
             'last_name', 'recipes', 'is_subscribed',
-            'recipes_count',  
+            'recipes_count',
         )
 
-        #'subscribed_to', 'subscriber'
-    
     def get_is_subscribed(self, obj):
         return Subscription.objects.filter(
             subscribed_to=obj,
@@ -336,12 +320,6 @@ class SubscirptionRespondSerializer(serializers.ModelSerializer):
             recipes, many=True, context=self.context
         ).data
 
-    # def to_representation(self, instance):
-    #     data = super().to_representation(instance)
-    #     data.pop('subscribed_to')
-    #     data.pop('subscriber')
-    #     return data
-
 
 class ShoppingCartListSerializer(serializers.ModelSerializer):
     ingredients = IngredientRecipeReadSerializer(
@@ -356,11 +334,11 @@ class ShoppingCartListSerializer(serializers.ModelSerializer):
 class FavoriteSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all())
-    
+
     class Meta:
         model = Favorite
         fields = ('user', 'recipe')
-    
+
     def validate(self, data):
         user = data.get('user')
         recipe = data.get('recipe')
@@ -385,10 +363,8 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         fields = ('user', 'recipe')
 
     def validate(self, data):
-        print('DATA IN VALIDATE METHOD', data)
         user = data.get('user')
         recipe = data.get('recipe')
-        print('RECIPE ID: ', recipe.id)
         if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
-            raise ValidationError('Рецепт уже в избранном.')
+            raise ValidationError('Рецепт уже в корзине.')
         return data

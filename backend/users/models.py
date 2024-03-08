@@ -9,10 +9,6 @@ class User(AbstractUser):
     """Модель пользователя."""
     USER = 'user'
     ADMIN = 'admin'
-    USER_ROLES = [
-        (USER, 'Авторизированный пользователь'),
-        (ADMIN, 'Администратор'),
-    ]
     USERNAME_FIELD = 'email'
 
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
@@ -37,20 +33,11 @@ class User(AbstractUser):
         max_length=MAX_LENGTH_VALUE,
         verbose_name='Фамилия'
     )
-    role = models.CharField(
-        verbose_name='Права доступа',
-        max_length=MAX_LENGTH_VALUE,
-        choices=USER_ROLES,
-        default=USER
-    )
 
     class Meta:
         ordering = ['username']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-
-    def is_admin(self):
-        return self.role == self.ADMIN or self.is_superuser
 
     def __str__(self):
         return self.username

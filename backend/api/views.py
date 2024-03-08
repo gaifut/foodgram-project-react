@@ -1,11 +1,8 @@
-from io import BytesIO
-
 from rest_framework import (
     filters, viewsets, status, permissions,
 )
-from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Sum
-from django.http import HttpResponse, FileResponse
+from django.db.models import Sum
+from django.http import FileResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
@@ -14,12 +11,14 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import (
     AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 )
-from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
-from recipes.models import Ingredient, Recipe, Subscription, Tag, Favorite, ShoppingCart, IngredientRecipe
+from recipes.models import (
+    Favorite, Ingredient, IngredientRecipe,
+    Recipe, ShoppingCart, Subscription, Tag
+)
 from api.pagination import CustomPagination
 from users.models import User
 from .filters import RecipeFilter
@@ -27,8 +26,8 @@ from .permissions import IsRecipeAuthorOrReadOnly
 from .serializers import (
     CustomUserSerializer, FavoriteSerializer,
     IngredientSerializer, RecipeGetSerializer, RecipeSerializer,
-    ShoppingCartSerializer, ShoppingCartListSerializer,
-    SubscirptionCreateSerializer, SubscirptionRespondSerializer, TagSerializer,
+    ShoppingCartSerializer, SubscirptionCreateSerializer,
+    SubscirptionRespondSerializer, TagSerializer,
     FavoriteDisplaySerializer
 )
 
@@ -46,54 +45,6 @@ def make_file(ingredients):
             'attachment; filename="shopping_cart.txt"'
         )
     return response
-
-
-
-# class PlainTextRenderer(BaseRenderer):
-#     media_type = 'text/plain'
-#     format = 'txt'
-
-#     def render(self, data, media_type=None, renderer_context=None):
-#         ingredients_info = {}
-
-#         if isinstance(data, list):
-#             for item in data:
-#                 ingredients = item.get('ingredients', [])
-#                 for ingredient in ingredients:
-#                     name = ingredient.get('name', '')
-#                     amount = ingredient.get('amount', 0)
-#                     measurement_unit = ingredient.get('measurement_unit', '')
-
-#                     if name in ingredients_info:
-#                         ingredients_info[name]['amount'] += amount
-#                     else:
-#                         ingredients_info[name] = {
-#                             'amount': amount,
-#                             'measurement_unit': measurement_unit
-#                         }
-
-#         else:
-#             ingredients = data.get('ingredients', [])
-#             for ingredient in ingredients:
-#                 name = ingredient.get('name', '')
-#                 amount = ingredient.get('amount', 0)
-#                 measurement_unit = ingredient.get('measurement_unit', '')
-
-#                 if name in ingredients_info:
-#                     ingredients_info[name]['amount'] += amount
-#                 else:
-#                     ingredients_info[name] = {
-#                         'amount': amount,
-#                         'measurement_unit': measurement_unit
-#                     }
-
-#         ingredients_text = ''
-#         for name, info in ingredients_info.items():
-#             ingredients_text += (
-#                 f'{name}: {info["amount"]} {info["measurement_unit"]}\n'
-#             )
-
-#         return ingredients_text
 
 
 class CustomUserViewSet(UserViewSet):
@@ -137,7 +88,6 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ShoppingCartListView(APIView):
-    #renderer_classes = [PlainTextRenderer]
     permission_classes = (permissions.IsAuthenticated,)
     filterset_class = RecipeFilter
 
@@ -158,26 +108,11 @@ class SubscriptionListView(ListAPIView):
     serializer_class = SubscirptionRespondSerializer
     pagination_class = CustomPagination
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     queryset = Subscription.objects.filter(subscriber=user)
-    #     recipes_limit = self.request.query_params.get('recipes_limit')
-    #     if recipes_limit:
-    #         queryset = queryset.annotate(recipes_count=Count(
-    #             'subscribed_to__recipes'
-    #         ))
-    #         queryset = queryset.filter(recipes_count__lte=recipes_limit)
-
-    #     return queryset
 
 
 class SubscriptionView(ListAPIView):
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = SubscirptionRespondSerializer
-
-    # def get_queryset(self):
-    #     return User.objects.filter(subsciber__user=self.request.user)
 
     def post(self, request, user_id):
         subscribed_to = get_object_or_404(User, pk=user_id)
@@ -191,8 +126,7 @@ class SubscriptionView(ListAPIView):
                 'subscriber': subscriber.id,
             })
         serializer_create.is_valid(raise_exception=True)
-        subscription = serializer_create.save()
-        print('SUBSCRIPTION: ', subscription)
+        serializer_create.save()
 
         serializer_respond = SubscirptionRespondSerializer(
             instance=get_object_or_404(User, pk=user_id),
@@ -286,7 +220,7 @@ class ShoppingCartView(ListAPIView):
         )
         if not Recipe.objects.filter(pk=recipe_pk).exists():
             raise NotFound('Рецепта не существует.')
-   
+
         if not shopping_cart.exists():
             return Response({
                 'error': 'рецепта нет в корзине'},
@@ -294,4 +228,3 @@ class ShoppingCartView(ListAPIView):
             )
         shopping_cart.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-        

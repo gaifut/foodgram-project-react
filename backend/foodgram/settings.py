@@ -122,8 +122,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 6,
 }
 
-# 'PAGE_SIZE_QUERY_PARAM': 'limit'
-
 AUTH_USER_MODEL = 'users.User'
 
 DJOSER = {
