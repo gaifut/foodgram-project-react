@@ -267,6 +267,15 @@ class SubscirptionCreateSerializer(serializers.ModelSerializer):
         fields = ('subscribed_to', 'subscriber')
 
 
+    def validate(self, attrs):
+        if attrs.get('subscribed_to') == attrs.get('subscriber'):
+            raise ValidationError('Нельзя подписаться на самого себя.')
+        if Subscription.objects.filter(
+            subscribed_to=attrs.get('subscribed_to'),
+            subscriber=attrs.get('subscriber')
+        ).exists():
+            raise ValidationError('Подписка уже существует.')
+        return attrs
 
 class DisplayRecipesSubscriptionSerializer(serializers.ModelSerializer):
 
