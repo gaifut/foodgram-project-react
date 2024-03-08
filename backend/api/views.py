@@ -42,8 +42,8 @@ def make_file(ingredients):
     content = '\n'.join(ingredients_info)
     response = FileResponse(content, content_type='text/plain')
     response['Content-Disposition'] = (
-            'attachment; filename="shopping_cart.txt"'
-        )
+        'attachment; filename="shopping_cart.txt"'
+    )
     return response
 
 
