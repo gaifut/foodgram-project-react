@@ -6,7 +6,6 @@ from django.http import FileResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
-from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import (
     AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -28,7 +27,6 @@ from .serializers import (
     IngredientSerializer, RecipeGetSerializer, RecipeSerializer,
     ShoppingCartSerializer, SubscirptionCreateSerializer,
     SubscirptionRespondSerializer, TagSerializer,
-    FavoriteDisplaySerializer
 )
 
 
@@ -122,16 +120,13 @@ class SubscriptionView(ListAPIView):
             data={
                 'subscribed_to': subscribed_to.id,
                 'subscriber': subscriber.id,
-            })
-        serializer_create.is_valid(raise_exception=True)
-        serializer_create.save()
-
-        serializer_respond = SubscirptionRespondSerializer(
-            instance=get_object_or_404(User, pk=user_id),
+            },
             context={'request': request}
         )
+        serializer_create.is_valid(raise_exception=True)
+        serializer_create.save()
         return Response(
-            serializer_respond.data, status=status.HTTP_201_CREATED
+            serializer_create.data, status=status.HTTP_201_CREATED
         )
 
     def delete(self, request, user_id):
@@ -162,13 +157,9 @@ class FavoriteView(ListAPIView):
             }
         )
         serializer_create.is_valid(raise_exception=True)
-        favorite = serializer_create.save()
-
-        serializer_respond = FavoriteDisplaySerializer(
-            instance=favorite.recipe,
-        )
+        serializer_create.save()
         return Response(
-            serializer_respond.data, status=status.HTTP_201_CREATED
+            serializer_create.data, status=status.HTTP_201_CREATED
         )
 
     def delete(self, request, recipe_pk):
@@ -200,13 +191,9 @@ class ShoppingCartView(ListAPIView):
             }
         )
         serializer_create.is_valid(raise_exception=True)
-        shopping_cart = serializer_create.save()
-
-        serializer_respond = FavoriteDisplaySerializer(
-            instance=shopping_cart.recipe,
-        )
+        serializer_create.save()
         return Response(
-            serializer_respond.data, status=status.HTTP_201_CREATED
+            serializer_create.data, status=status.HTTP_201_CREATED
         )
 
     def delete(self, request, recipe_pk):

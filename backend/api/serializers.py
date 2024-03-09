@@ -202,7 +202,11 @@ class SubscirptionCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def to_representation(self, instance):
-        return super().to_representation(instance)
+        request = self.context.get('request')
+        return SubscirptionRespondSerializer(
+            instance=instance.subscriber,
+            context={'request': request}
+        ).data
 
 
 class DisplayRecipesSubscriptionSerializer(serializers.ModelSerializer):
@@ -263,6 +267,11 @@ class FavoriteSerializer(serializers.ModelSerializer):
             raise ValidationError('Рецепт уже в избранном.')
         return data
 
+    def to_representation(self, instance):
+        return FavoriteDisplaySerializer(
+            instance=instance.recipe,
+        ).data
+
 
 class FavoriteDisplaySerializer(serializers.ModelSerializer):
 
@@ -283,3 +292,8 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
             raise ValidationError('Рецепт уже в корзине.')
         return data
+
+    def to_representation(self, instance):
+        return FavoriteDisplaySerializer(
+            instance=instance.recipe,
+        ).data
