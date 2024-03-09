@@ -1,8 +1,7 @@
 from django_filters import rest_framework as f
-from django.db.models import Exists, OuterRef
 
 
-from recipes.models import Recipe, Favorite, ShoppingCart
+from recipes.models import Recipe
 
 
 class RecipeFilter(f.FilterSet):
@@ -24,35 +23,11 @@ class RecipeFilter(f.FilterSet):
         fields = ['author', 'tags', 'is_favorited', 'is_in_shopping_cart']
 
     def filter_is_favorited(self, queryset, name, value):
-        if self.request.user.is_anonymous:
-            subquery = Favorite.objects.filter(
-                recipe=OuterRef('pk'),
-            )
-            queryset = queryset.annotate(
-                is_favorited=Exists(subquery)
-            )
-            return queryset.filter(is_favorited=False)
-        subquery = Favorite.objects.filter(
-            recipe=OuterRef('pk'), user=self.request.user
-        )
-        queryset = queryset.annotate(
-            is_favorited=Exists(subquery)
-        )
-        return queryset.filter(is_favorited=value)
+        if self.request.user.is_authenticated and value:
+            return queryset.filter(favorite_recipe__user=self.request.user)
+        return queryset
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
-        if self.request.user.is_anonymous:
-            subquery = ShoppingCart.objects.filter(
-                recipe=OuterRef('pk'),
-            )
-            queryset = queryset.annotate(
-                is_in_shopping_cart=Exists(subquery)
-            )
-            return queryset.filter(is_in_shopping_cart=False)
-        subquery = ShoppingCart.objects.filter(
-            recipe=OuterRef('pk'), user=self.request.user
-        )
-        queryset = queryset.annotate(
-            is_in_shopping_cart=Exists(subquery)
-        )
-        return queryset.filter(is_in_shopping_cart=value)
+        if self.request.user.is_authenticated and value:
+            return queryset.filter(shopping_cart__user=self.request.user)
+        return queryset

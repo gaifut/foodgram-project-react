@@ -2,13 +2,11 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 
-MAX_LENGTH_VALUE = 150
+from foodgram.constants import MAX_LENGTH_VALUE
 
 
 class User(AbstractUser):
     """Модель пользователя."""
-    USER = 'user'
-    ADMIN = 'admin'
     USERNAME_FIELD = 'email'
 
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
@@ -16,7 +14,7 @@ class User(AbstractUser):
         verbose_name='Имя пользователя',
         max_length=MAX_LENGTH_VALUE,
         unique=True,
-        validators=([UnicodeUsernameValidator(regex=r'^[\w.@+-]+\Z')])
+        validators=([UnicodeUsernameValidator()])
     )
     password = models.CharField(
         max_length=MAX_LENGTH_VALUE,
