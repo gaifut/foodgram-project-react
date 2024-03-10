@@ -153,7 +153,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients_data_list = [
             IngredientRecipe(
                 recipe=recipe,
-                ingredient=Ingredient.objects.get(id=ingredient['id'].id),
+                ingredient=ingredient['id'],
                 amount=ingredient['amount']
             ) for ingredient in ingredients_data
         ]
