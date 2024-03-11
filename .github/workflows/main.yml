@@ -123,6 +123,8 @@ jobs:
         script: |
           cd foodgram
           # Создадим .env файл
+          rm .env
+          touch .env
           echo TOKEN=${{ secrets.TOKEN }} >> .env
           echo DEBUG=${{ secrets.DEBUG }} >> .env
           echo ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }} >> .env
