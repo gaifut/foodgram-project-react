@@ -57,7 +57,8 @@ INSERT INTO recipes_tag VALUES (3,'ужин', '0000FF', 'dinner');
 - Python
 
 **Как открыть доку:**
-
+После скачивания репозиория foodgram с гитхаб доступно в нем и по адресу:
+http://localhost/api/docs/redoc.html
 
 **Пример запросов и ответов:**
 *Список пользователей*
@@ -90,8 +91,98 @@ http://localhost/api/users/
 
 *Создание рецепта*
 Доступно только авторизованному пользователю.
+Тип запроса: POST
+
+URL:
+```
+http://localhost/api/recipes/
+```
+
+В запросе указываются:
+ingredients (Array of objects) Список ингредиентов
+tags (Array of integers) Список id тегов
+image (string <binary> ) Картинка, закодированная в Base64
+name (string <= 200 characters ) Название
+text (string) Описание
+cooking_time (integer >= 1 ) Время приготовления (в минутах)
+
+Пример запроса:
+```
+{
+  "ingredients": [
+    {
+      "id": 1123,
+      "amount": 10
+    }
+  ],
+  "tags": [
+    1,
+    2
+  ],
+  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAgMAAABieywaAAAACVBMVEUAAAD///9fX1/S0ecCAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAACklEQVQImWNoAAAAggCByxOyYQAAAABJRU5ErkJggg==",
+  "name": "string",
+  "text": "string",
+  "cooking_time": 1
+}
+```
+
+Пример ответа:
+```
+{
+  "id": 0,
+  "tags": [
+    {
+      "id": 0,
+      "name": "Завтрак",
+      "color": "#E26C2D",
+      "slug": "breakfast"
+    }
+  ],
+  "author": {
+    "email": "user@example.com",
+    "id": 0,
+    "username": "string",
+    "first_name": "Вася",
+    "last_name": "Пупкин",
+    "is_subscribed": false
+  },
+  "ingredients": [
+    {
+      "id": 0,
+      "name": "Картофель отварной",
+      "measurement_unit": "г",
+      "amount": 1
+    }
+  ],
+  "is_favorited": true,
+  "is_in_shopping_cart": true,
+  "name": "string",
+  "image": "http://foodgram.example.org/media/recipes/images/image.jpeg",
+  "text": "string",
+  "cooking_time": 1
+}
+```
 
 *Добавить рецепт в список покупок*
+Доступно только авторизованным пользователям.
+Тип запроса: POST.
+
+URL:
+```
+http://localhost/api/recipes/{id}/shopping_cart/
+```
+
+Обязательный path parameter: id (string) - уникальный идентификатор рецепта.
+
+Пример ответа:
+```
+{
+  "id": 0,
+  "name": "string",
+  "image": "http://foodgram.example.org/media/recipes/images/image.jpeg",
+  "cooking_time": 1
+}
+```
 
 **Автор проекта:**
 Гайфутдинов Артур
