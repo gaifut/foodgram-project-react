@@ -101,7 +101,7 @@ class ShoppingCartListView(APIView):
 
 
 class SubscriptionListView(ListAPIView):
-    queryset = Subscription.objects.all()
+    queryset = User.objects.all()
     serializer_class = SubscirptionRespondSerializer
     pagination_class = CustomPagination
     permission_classes = (IsAuthenticatedOrReadOnly,)
