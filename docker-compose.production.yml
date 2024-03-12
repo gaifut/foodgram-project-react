@@ -18,7 +18,7 @@ services:
       - db
     volumes:
       - static:/backend_static
-      - media:/media
+      - media:/app/media
   frontend:
     env_file: .env
     image: gaifut/foodgram_frontend
@@ -36,7 +36,7 @@ services:
       - 11000:80
     volumes:
       - static:/static
-      - media:/media
+      - media:/app/media
 #      - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf
 #      - ./frontend/build:/usr/share/nginx/html/
 #      - ./docs/:/usr/share/nginx/html/api/docs/
