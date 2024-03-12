@@ -107,7 +107,7 @@ class SubscriptionListView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = User.objects.filter(subscribed_to__user=user)
+        queryset = User.objects.filter(subscriber__user=user)
         return queryset
 
 
