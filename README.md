@@ -61,8 +61,35 @@ INSERT INTO recipes_tag VALUES (3,'ужин', '0000FF', 'dinner');
 
 **Пример запросов и ответов:**
 *Список пользователей*
+Запрос списка пользователей, может производиться как зарегистрированным пользователем, так и анонимным.
+Тип запроса: GET.
+Можно задать параметры запроса (query parameters): page(целое число - номер страницы) и limit(целое число - кол-во объектов на странице).
+URL:
+```
+http://localhost/api/users/
+```
+
+Пример ответа на запрос:
+```
+{
+  "count": 123,
+  "next": "http://foodgram.example.org/api/users/?page=4",
+  "previous": "http://foodgram.example.org/api/users/?page=2",
+  "results": [
+    {
+      "email": "user@example.com",
+      "id": 0,
+      "username": "string",
+      "first_name": "Вася",
+      "last_name": "Пупкин",
+      "is_subscribed": false
+    }
+  ]
+}
+```
 
 *Создание рецепта*
+Доступно только авторизованному пользователю.
 
 *Добавить рецепт в список покупок*
 
