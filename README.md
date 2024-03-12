@@ -30,16 +30,20 @@ DB_HOST= название хоста
 DB_PORT=5432
 
 5. Прописать для заполнения БД:
+```
 sudo docker exec имя_контейнера python manage.py migrate
 sudo docker exec имя_контейнера python manage.py csv_to_db
 sudo docker exec имя_контейнера python manage.py collectstatic --no-input
+```
 
 6. Зайти в контейнер с БД:
 sudo docker exec it имя_контейнера psql -U имя_пользователя -d имя_БД
 в открывшемся терминале прописать
+```
 INSERT INTO recipes_tag VALUES (1,'завтрак', '008000', 'breakfast');
 INSERT INTO recipes_tag VALUES (2,'обед', 'FF0000', 'lunch');
 INSERT INTO recipes_tag VALUES (3,'ужин', '0000FF', 'dinner');
+```
 
 7. Выполнить команду sudo docker compose up.
 
