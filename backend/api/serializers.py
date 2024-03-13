@@ -174,7 +174,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientRecipe.objects.filter(recipe=instance).delete()
         super().update(instance, validated_data)
 
-        self.create_ingredients(ingredients_data, instance)
+        #self.create_ingredients(ingredients_data, instance)
         instance.tags.set(tags_data)
         instance.save()
 
