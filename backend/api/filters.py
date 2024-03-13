@@ -1,18 +1,18 @@
-from django_filters import rest_framework as f
+from django_filters.rest_framework import FilterSet, filters
 
 from recipes.models import Ingredient, Recipe
 
 
-class RecipeFilter(f.FilterSet):
-    author = f.CharFilter()
-    tags = f.AllValuesMultipleFilter(
+class RecipeFilter(FilterSet):
+    author = filters.CharFilter()
+    tags = filters.AllValuesMultipleFilter(
         field_name='tags__slug', lookup_expr='contains'
     )
-    is_favorited = f.BooleanFilter(
+    is_favorited = filters.BooleanFilter(
         field_name='is_favorited',
         method='filter_is_favorited'
     )
-    is_in_shopping_cart = f.BooleanFilter(
+    is_in_shopping_cart = filters.BooleanFilter(
         field_name='is_in_shopping_cart',
         method='filter_is_in_shopping_cart'
     )
@@ -32,8 +32,8 @@ class RecipeFilter(f.FilterSet):
         return queryset
 
 
-class IngredientFilter(f.FilterSet):
-    name = f.CharFilter(lookup_expr='istartswith')
+class IngredientFilter(FilterSet):
+    name = filters.CharFilter(lookup_expr='istartswith')
 
     class Meta:
         model = Ingredient
