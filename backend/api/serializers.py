@@ -168,11 +168,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
+        instance.ingredients_recipe.all().delete()
         ingredients_data = validated_data.pop('ingredients_recipe')
         tags_data = validated_data.pop('tags')
         instance.tags.clear()
-        instance.ingredients_recipe.all().delete()
-        instance.save()
 
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
@@ -180,6 +179,10 @@ class RecipeSerializer(serializers.ModelSerializer):
             'cooking_time', instance.cooking_time
         )
         instance.image = validated_data.get('image', instance.image)
+
+        IngredientRecipe.objects.filter(
+            recipe=instance,
+            ingredient__in=instance.ingredients.all()).delete()
 
         self.create_ingredients(ingredients_data, instance)
         instance.tags.set(tags_data)

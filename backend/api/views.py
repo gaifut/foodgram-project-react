@@ -42,7 +42,7 @@ class CustomUserViewSet(UserViewSet):
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
-    # filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
     permission_classes = (AllowAny,)
     pagination_class = None
