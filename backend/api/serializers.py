@@ -168,9 +168,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        instance.image.delete()
-        instance.image = validated_data.get('image', instance.image)
-
         tags_data = validated_data.pop('tags')
         instance.tags.clear()
         instance.tags.set(tags_data)
