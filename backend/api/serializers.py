@@ -171,9 +171,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients_data = validated_data.pop('ingredients_recipe')
         tags_data = validated_data.pop('tags')
         instance.tags.clear()
-        instance.ingredients_recipe.clear()
-        # instance.ingredients_recipe.all().delete()
-        # instance.save()
+        instance.ingredients_recipe.all().delete()
+        instance.save()
 
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
