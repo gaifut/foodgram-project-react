@@ -1,5 +1,5 @@
 from rest_framework import (
-    filters, viewsets, status, permissions,
+    viewsets, status, permissions,
 )
 from django.db.models import Sum
 from django.http import FileResponse
