@@ -172,6 +172,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags_data = validated_data.pop('tags')
         instance.tags.clear()
         instance.ingredients_recipe.all().delete()
+        instance.save()
 
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
@@ -182,11 +183,8 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         self.create_ingredients(ingredients_data, instance)
         instance.tags.set(tags_data)
-        
-        instance.save()
-        return instance
 
-        # return super().update(instance, validated_data)
+        return super().update(instance, validated_data)
 
 
 class SubscirptionCreateSerializer(serializers.ModelSerializer):
