@@ -75,7 +75,8 @@ class Recipe(models.Model):
                 f'{POSITIVE_SMALL_MAX_VALUE}')
         ]
     )
-    ingredients = models.ManyToManyField(Ingredient)
+    ingredients = models.ManyToManyField(
+        Ingredient, through='IngredientRecipe')
     tags = models.ManyToManyField(Tag)
     image = models.ImageField(
         verbose_name='Изображение',
