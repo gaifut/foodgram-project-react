@@ -20,7 +20,7 @@ from recipes.models import (
 )
 from api.pagination import CustomPagination
 from users.models import User
-from .filters import RecipeFilter
+from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsRecipeAuthorOrReadOnly
 from .serializers import (
     CustomUserSerializer, FavoriteSerializer,
@@ -43,8 +43,7 @@ class CustomUserViewSet(UserViewSet):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
-    search_fields = ('name',)
-    filterset_fields = ('name',)
+    filterset_class = IngredientFilter
     permission_classes = (AllowAny,)
     pagination_class = None
     serializer_class = IngredientSerializer
