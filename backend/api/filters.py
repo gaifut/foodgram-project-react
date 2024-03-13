@@ -32,8 +32,16 @@ class RecipeFilter(FilterSet):
         return queryset
 
 
-class IngredientFilter(FilterSet):
-    name = filters.CharFilter(lookup_expr='istartswith')
+# class IngredientFilter(FilterSet):
+#     name = filters.CharFilter(lookup_expr='istartswith')
+
+#     class Meta:
+#         model = Ingredient
+#         fields = ('name', )
+
+
+class IngredientFilter(filters.FilterSet):
+    name = filters.CharFilter(field_name='name', lookup_expr='icontains')
 
     class Meta:
         model = Ingredient
