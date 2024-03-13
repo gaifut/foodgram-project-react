@@ -168,17 +168,32 @@ class RecipeSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        validated_data.pop('ingredients_recipe')
-        ingredients_data = validated_data.pop('ingredients_recipe')
+        instance.image.delete()
+        instance.image = validated_data.get('image', instance.image)
+
         tags_data = validated_data.pop('tags')
         instance.tags.clear()
-        IngredientRecipe.objects.filter(recipe=instance).delete()
-        super().update(instance, validated_data)
-
-        self.create_ingredients(ingredients_data, instance)
         instance.tags.set(tags_data)
 
+        ingredients_data = validated_data.pop('ingredients_recipe')
+        ingredients_recipe = instance.ingredients_recipe.all()
+        ingredients_recipe.delete()
+
+        self.create_ingredients(ingredients_data, instance)
+
         return super().update(instance, validated_data)
+
+        # validated_data.pop('ingredients_recipe')
+        # ingredients_data = validated_data.pop('ingredients_recipe')
+        # tags_data = validated_data.pop('tags')
+        # instance.tags.clear()
+        # IngredientRecipe.objects.filter(recipe=instance).delete()
+        # super().update(instance, validated_data)
+
+        # self.create_ingredients(ingredients_data, instance)
+        # instance.tags.set(tags_data)
+
+        # return super().update(instance, validated_data)
 
 
 class SubscirptionCreateSerializer(serializers.ModelSerializer):
