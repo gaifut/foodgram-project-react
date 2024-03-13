@@ -174,17 +174,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientRecipe.objects.filter(recipe=instance).delete()
         super().update(instance, validated_data)
 
-        instance.name = validated_data.get('name', instance.name)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time
-        )
-        instance.image = validated_data.get('image', instance.image)
-
         self.create_ingredients(ingredients_data, instance)
         instance.tags.set(tags_data)
+        instance.save()
 
-        return super().update(instance, validated_data)
+        return instance
 
 
 class SubscirptionCreateSerializer(serializers.ModelSerializer):
