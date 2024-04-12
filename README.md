@@ -1,4 +1,4 @@
-# praktikum_new_diplom
+# Проект Foodgram
 
 **Домен**:
 https://foooodgram.ddns.net
