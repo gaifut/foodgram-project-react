@@ -26,7 +26,7 @@ Foodgram - это веб-приложение, предоставляющее п
 
 ## Как запустить проект:
 - Скачать docker на сервер, если его нет. Инструкции: https://docs.docker.com/get-docker/
-- asd
+- [Запустить с DockerHub](#Запуск-с-DockerHub) или [запустить с GitHub](#Запуск-с-GitHub).
 - Прописать для заполнения БД:
   ```
   # команда для отображения контейнеров sudo docker ps -a
@@ -76,8 +76,35 @@ DB_PORT=5432
 ```
 sudo docker compose -f docker-compose.production.yml up
 ```
+### Запуск с GitHub
+1. Клонировать репозиторий с проектом на свой компьютер:
+   ```git clone git@github.com:gaifut/foodgram-project-react.git```
 
+2. Установить и активировать виртуальное окружение: 
+```
+python3.9 -m venv venv
+. venv/bin/activate
+```
+В виртуальном окружении в папке backend (```cd backend```)установить зависимости:
+```
+pip install -r requirements.txt
+```
 
+3. Создать .env файл со сделующей информацией:
+  ```                                                       
+  TOKEN= указать секретный токен 
+  DEBUG=выбрать True или False и указать
+  ALLOWED_HOSTS= ip сервера,127.0.0.1,localhost,домен сайта
+  POSTGRES_USER= логин
+  POSTGRES_PASSWORD= пароль
+  POSTGRES_DB= имя БД
+  DB_HOST= название хоста
+  DB_PORT=5432
+  ```
+4. Выполнить сборку контейнеров:
+   ```
+   sudo docker compose -f docker-compose.yml up
+   ```
 
 ## Как открыть документацию:
 После скачивания репозиория foodgram с гитхаб доступно в нем и по адресу:
