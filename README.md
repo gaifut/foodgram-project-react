@@ -3,23 +3,29 @@
 **Домен**:
 https://foooodgram.ddns.net
 
-Описание проекта:
+### Описание проекта:
 Foodgram - это веб-приложение, предоставляющее пользователям платформу для обмена рецептами. Пользователи могут делиться своими кулинарными шедеврами, добавлять понравившиеся рецепты в избранное и подписываться на авторов для получения обновлений. Кроме того, в приложении доступен сервис "Список покупок", который поможет упростить планирование покупок продуктов для приготовления блюд. Проект развернут в контейнерах Docker, с автоматическим тестированием и развертыванием на виртуальном сервере с Ubuntu через Github Actions. Важно отметить, что сайт обеспечивает безопасное соединение с использованием протокола HTTPS, обеспечивая конфиденциальность пользовательских данных.
+
+**Стек технологий:**
+- Django and Django REST Framework
+- Docker
+- GithubActions
+- Gunicorn
+- Nginx
+- PostgreSQL
+- Python
 
 **Как развернуть в докере**:
 1. Скачать docker на сервер, если его нет. Инструкции: https://docs.docker.com/get-docker/
 
-2. Перейти на старницу https://hub.docker.com/u/gaifut и скачать:
-- gaifut/foodgram_frontend
-- gaifut/foodgram_backend
-- gaifut/foodgram_nginx
+2. Скачать файл docker-compose.production.yml из этого репозитория.
+3. Создать папку для проекта, например так:
+```
+mkdir foodgram
+cd foodgram
+```
 
-Необходимо кликнуть на название, в открывшемся окне будет доступна ссылка на pull.
-
-3. Скачать файл docker-compose.production.yml c https://github.com/gaifut
-Репозиторий - foodgram.
-
-4. Создать .env файл со сделующей информацией:
+4. Создать в папке .env файл со сделующей информацией:
 ```                                                       
 TOKEN= указать секретный токен 
 DEBUG=выбрать True или False и указать
@@ -30,11 +36,24 @@ POSTGRES_DB= имя БД
 DB_HOST= название хоста
 DB_PORT=5432
 ```
-5. Прописать для заполнения БД:
+5. Запустить систему контейнеров:
 ```
-sudo docker exec имя_контейнера python manage.py migrate
-sudo docker exec имя_контейнера python manage.py csv_to_db
-sudo docker exec имя_контейнера python manage.py collectstatic --no-input
+sudo docker compose -f docker-compose.production.yml up
+```
+6. Прописать для заполнения БД:
+```
+# команда для отображения контейнеров sudo docker ps -a
+# вам нужен контейнер с бэкендом для всех операций ниже:
+
+# миграции, ниже дан пример с id контейнера, используйте ваш id либо имя
+sudo docker exec -it 23230f87a331 python manage.py migrate
+
+# выгрузка данных, ниже дан пример с id контейнера, используйте ваш id либо имя
+sudo docker exec -it 23230f87a331 python manage.py csv_to_db
+
+# сбор статики, ниже дан пример с id контейнера, используйте ваш id либо имя
+sudo docker exec -it 23230f87a331 python manage.py collectstatic --no-input
+
 ```
 
 6. Зайти в контейнер с БД:
@@ -46,16 +65,6 @@ INSERT INTO recipes_tag VALUES (2,'обед', 'FF0000', 'lunch');
 INSERT INTO recipes_tag VALUES (3,'ужин', '0000FF', 'dinner');
 ```
 
-7. Выполнить команду sudo docker compose up.
-
-**Стек технологий:**
-- Django and Django REST Framework
-- Docker
-- GithubActions
-- Gunicorn
-- Nginx
-- PostgreSQL
-- Python
 
 **Как открыть доку:**
 После скачивания репозиория foodgram с гитхаб доступно в нем и по адресу:
