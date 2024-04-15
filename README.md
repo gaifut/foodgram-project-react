@@ -19,7 +19,8 @@ Foodgram - это веб-приложение, предоставляющее п
 3. Скачать файл docker-compose.production.yml c https://github.com/gaifut
 Репозиторий - foodgram.
 
-4. Создать .env файл со сделующей информацией:                                                       
+4. Создать .env файл со сделующей информацией:
+```                                                       
 TOKEN= указать секретный токен 
 DEBUG=выбрать True или False и указать
 ALLOWED_HOSTS= ip сервера,127.0.0.1,localhost,домен сайта
@@ -28,7 +29,7 @@ POSTGRES_PASSWORD= пароль
 POSTGRES_DB= имя БД
 DB_HOST= название хоста
 DB_PORT=5432
-
+```
 5. Прописать для заполнения БД:
 ```
 sudo docker exec имя_контейнера python manage.py migrate
